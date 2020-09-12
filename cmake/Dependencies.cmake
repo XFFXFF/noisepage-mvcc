@@ -1,0 +1,6 @@
+
+set(NOISEPAGE_LINKER_LIBS "")
+
+find_package(TBB REQUIRED)
+include_directories(SYSTEM, ${TBB_INCLUDE_DIRS})
+list(APPEND NOISEPAGE_LINKER_LIBS ${TBB_LIBRARIES})
