@@ -1,15 +1,13 @@
 
-add_executable(concurrent_queue_test ${PROJECT_SOURCE_DIR}/test/common/concurrent_queue_test.cpp)
-add_executable(object_pool_test ${PROJECT_SOURCE_DIR}/test/common/object_pool_test.cpp)
+file(GLOB test_srcs ${PROJECT_SOURCE_DIR}/test/*/*test.cpp)
 
-target_link_libraries(concurrent_queue_test 
-    ${NOISEPAGE_LINKER_LIBS}
-    GTest::GTest
-    GTest::Main
-)
-
-target_link_libraries(object_pool_test 
-    ${NOISEPAGE_LINKER_LIBS}
-    GTest::GTest
-    GTest::Main
-)
+foreach(test_src ${test_srcs})
+    get_filename_component(test_bare_name ${test_src} NAME)
+    string(REPLACE ".cpp" "" test_name ${test_bare_name})
+    add_executable(${test_name} EXCLUDE_FROM_ALL ${test_src})
+    target_link_libraries(${test_name}
+        GTest::GTest
+        GTest::Main
+        ${NOISEPAGE_LINKER_LIBS}
+    )
+endforeach(test_src ${test_srcs})
