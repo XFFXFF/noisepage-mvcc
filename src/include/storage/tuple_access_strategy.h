@@ -101,7 +101,7 @@ struct Block {
 
   uint32_t block_id_;
   uint32_t num_records_;
-  byte varlen_contents_;
+  byte varlen_contents_[0];
 };
 
 void InitializeRawBlock(RawBlock *raw,

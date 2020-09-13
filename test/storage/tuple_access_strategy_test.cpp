@@ -9,7 +9,7 @@ class TupleAccessStrategyTests : public ::testing::Test {};
 TEST_F(TupleAccessStrategyTests, NullTest) {
   std::default_random_engine generator;
 
-  storage::RawBlock *raw_block = nullptr;
+  storage::RawBlock *raw_block = new storage::RawBlock();
   memset(raw_block, 0, sizeof(storage::RawBlock));
 
   const uint32_t repeat = 1;
