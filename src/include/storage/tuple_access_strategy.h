@@ -2,28 +2,30 @@
 
 #include "common/concurrent_bitmap.h"
 #include <vector>
+#include <type_traits>
 #include <cstddef>
 
 namespace noisepage
 {
+// using byte = std::byte;
+#define byte unsigned char
+
 namespace storage
 {
-using byte = std::byte;
-
 struct BlockLayout {
   BlockLayout(uint16_t num_attrs, std::vector<uint8_t> attr_sizes)
       : num_cols_(num_attrs),
         attr_sizes_(std::move(attr_sizes)),
         num_slots_(NumSlots()) {}
   
-  uint32_t HeaderSize() {
+  uint32_t HeaderSize() const {
     return sizeof(uint32_t) * 3 // block_id, num_records, num_slots
         + sizeof(uint32_t) * num_cols_ // attr_offsets
         + sizeof(uint16_t) // num_attrs
         + sizeof(uint8_t) * num_cols_; // attr_sizes
   }
 
-  uint32_t TupleSize() {
+  uint32_t TupleSize() const {
     uint32_t tuple_size = 0;
     for (auto attr_size : attr_sizes_) {
       tuple_size += attr_size;
@@ -38,6 +40,11 @@ struct BlockLayout {
   const uint16_t num_cols_;
   const std::vector<uint8_t> attr_sizes_;
   const uint32_t num_slots_;
+};
+
+class RawBlock {
+  public:
+    byte content_[1u << 20];
 };
 
 /**
@@ -83,8 +90,8 @@ struct Block {
     return *reinterpret_cast<uint16_t *>(AttrOffsets() + layout.num_cols_);
   }
 
-  uint8_t AttrSizes(BlockLayout layout) {
-    return *reinterpret_cast<uint8_t *>(&NumAttrs(layout) + 1);
+  uint8_t *AttrSizes(BlockLayout layout) {
+    return reinterpret_cast<uint8_t *>(&NumAttrs(layout) + 1);
   }
 
   MiniBlock *Column(uint16_t col_offset) {
@@ -96,6 +103,10 @@ struct Block {
   uint32_t num_records_;
   byte varlen_contents_;
 };
+
+void InitializeRawBlock(RawBlock *raw,
+                        const BlockLayout &layout,
+                        uint32_t block_id);
 
 class TupleAccessStrategy {
   public:

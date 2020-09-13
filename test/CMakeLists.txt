@@ -8,6 +8,7 @@ foreach(test_src ${test_srcs})
     target_link_libraries(${test_name}
         GTest::GTest
         GTest::Main
+        noisepage
         ${NOISEPAGE_LINKER_LIBS}
     )
 endforeach(test_src ${test_srcs})
