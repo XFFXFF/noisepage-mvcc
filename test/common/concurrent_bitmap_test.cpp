@@ -77,10 +77,10 @@ TEST_F(ConcurrentBitmapTests, ConcurrentCorrectnessTest) {
   }
 
   EXPECT_EQ(all_elements.size(), num_elements);
-  // std::sort(all_elements.begin(), all_elements.end());
-  // for (uint32_t i = 0; i < num_elements; i++) {
-  //   EXPECT_EQ(all_elements[i], i);
-  // }
+  std::sort(all_elements.begin(), all_elements.end());
+  for (uint32_t i = 0; i < num_elements; i++) {
+    EXPECT_EQ(all_elements[i], i);
+  }
 }
 
 }
