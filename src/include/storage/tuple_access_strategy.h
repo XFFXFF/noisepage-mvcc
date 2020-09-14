@@ -126,6 +126,19 @@ class TupleAccessStrategy {
       }
       return false;
     }
+
+    byte *AccessWithNullCheck(Block *block, uint16_t col_id, uint32_t offset) {
+      if (!ColumnNullBitmap(block, col_id)->Test(offset)) {
+        return nullptr;
+      }
+      return block->Column(col_id)->ColumnStart(layout_) + offset * layout_.attr_sizes_[col_id];
+    }
+
+    byte *AccessForceNotNull(Block *block, uint16_t col_id, uint32_t offset) {
+      ColumnNullBitmap(block, col_id)->Flip(offset, false);
+      return block->Column(col_id)->ColumnStart(layout_) + offset * layout_.attr_sizes_[col_id];
+    }
+
   private:
     const BlockLayout layout_;
 };
