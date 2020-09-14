@@ -1,6 +1,8 @@
 #pragma once
 
 #include "common/concurrent_bitmap.h"
+#include "storage/storage_defs.h"
+#include "common/macros.h"
 #include <vector>
 #include <type_traits>
 #include <cstddef>
@@ -34,7 +36,7 @@ struct BlockLayout {
   }
 
   uint32_t NumSlots() {
-    return 8 * ((1u << 20) - HeaderSize()) / (8 * TupleSize() + num_cols_) - 1;
+    return 8 * ((BLOCK_SIZE) - HeaderSize()) / (8 * TupleSize() + num_cols_) - 1;
   }
 
   const uint16_t num_cols_;
@@ -44,7 +46,7 @@ struct BlockLayout {
 
 class RawBlock {
   public:
-    byte content_[1u << 20];
+    byte content_[BLOCK_SIZE];
 };
 
 /**
@@ -56,12 +58,13 @@ class RawBlock {
 struct MiniBlock {
   public:
     MiniBlock() = delete;
+    DISALLOW_COPY_AND_MOVE(MiniBlock);
     ~MiniBlock() = delete;
     RawConcurrentBitmap *NullBitmap() {
       return reinterpret_cast<RawConcurrentBitmap *>(varlen_contents_);
     }
 
-    byte *ColumnStart(BlockLayout layout) {
+    byte *ColumnStart(const BlockLayout &layout) {
       return varlen_contents_ + BitmapSize(layout.num_cols_);
     }
     byte varlen_contents_[0] {};
@@ -76,6 +79,7 @@ struct MiniBlock {
  */
 struct Block {
   Block() = delete;
+  DISALLOW_COPY_AND_MOVE(Block);
   ~Block() = delete;
 
   uint32_t &NumSlots() {
@@ -86,11 +90,11 @@ struct Block {
     return &NumSlots() + 1;
   }
 
-  uint16_t &NumAttrs(BlockLayout layout) {
+  uint16_t &NumAttrs(const BlockLayout &layout) {
     return *reinterpret_cast<uint16_t *>(AttrOffsets() + layout.num_cols_);
   }
 
-  uint8_t *AttrSizes(BlockLayout layout) {
+  uint8_t *AttrSizes(const BlockLayout &layout) {
     return reinterpret_cast<uint8_t *>(&NumAttrs(layout) + 1);
   }
 
@@ -110,7 +114,7 @@ void InitializeRawBlock(RawBlock *raw,
 
 class TupleAccessStrategy {
   public:
-    TupleAccessStrategy(BlockLayout layout) : layout_(layout) {}
+    TupleAccessStrategy(const BlockLayout &layout) : layout_(layout) {}
 
     RawConcurrentBitmap *ColumnNullBitmap(Block *block, uint16_t col_offset) {
       return block->Column(col_offset)->NullBitmap();
@@ -127,16 +131,21 @@ class TupleAccessStrategy {
       return false;
     }
 
+    byte *ColumnAt(Block *block, uint16_t col_id, uint32_t offset) {
+      byte *column_start = block->Column(col_id)->ColumnStart(layout_);
+      return column_start + offset * layout_.attr_sizes_[col_id];
+    }
+
     byte *AccessWithNullCheck(Block *block, uint16_t col_id, uint32_t offset) {
       if (!ColumnNullBitmap(block, col_id)->Test(offset)) {
         return nullptr;
       }
-      return block->Column(col_id)->ColumnStart(layout_) + offset * layout_.attr_sizes_[col_id];
+      return ColumnAt(block, col_id, offset);
     }
 
     byte *AccessForceNotNull(Block *block, uint16_t col_id, uint32_t offset) {
       ColumnNullBitmap(block, col_id)->Flip(offset, false);
-      return block->Column(col_id)->ColumnStart(layout_) + offset * layout_.attr_sizes_[col_id];
+      return ColumnAt(block, col_id, offset);
     }
 
   private:
