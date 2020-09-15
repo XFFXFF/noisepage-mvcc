@@ -90,7 +90,7 @@ void InsertTuple(const FakeRawTuple &tuple,
                  storage::Block *block,
                  uint32_t offset) {
   for (uint16_t i = 0; i < layout.num_cols_; i++) {
-    auto *pos = tested.AccessWithNullCheck(block, i, offset);
+    auto *pos = tested.AccessForceNotNull(block, i, offset);
     uint64_t val = tuple.Attribute(i);
     WriteByteValue(layout.attr_sizes_[i], val, pos);
   }
@@ -109,8 +109,8 @@ void TryInsertFakeTuple(const storage::BlockLayout &layout,
   auto result = tuples.emplace(
     std::piecewise_construct,
     std::forward_as_tuple(offset),
-    std::forward_as_tuple(layout, RandomTupleContent(layout, generator));
-  )
+    std::forward_as_tuple(layout, RandomTupleContent(layout, generator))
+  );
 
   EXPECT_TRUE(result.second);
   InsertTuple(result.first->second, layout, tested, block, offset);

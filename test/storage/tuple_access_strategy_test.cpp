@@ -1,5 +1,7 @@
+#include <unordered_map>
 #include "gtest/gtest.h"
 #include "storage/tuple_access_strategy.h"
+#include "storage/tuple_access_strategy_test_util.h"
 #include "common/test_util.h"
 
 namespace noisepage
@@ -46,6 +48,29 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
       }
     }
 
+  }
+}
+
+TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
+  const uint32_t repeat = 2;
+  const uint16_t max_col = 1000;
+  std::default_random_engine generator;
+  storage::RawBlock *raw_block = new storage::RawBlock();
+  for (uint32_t i = 0; i < repeat; i++) {
+    storage::BlockLayout layout = testutil::RandomLayout(generator, max_col);
+    storage::TupleAccessStrategy tested(layout);
+    memset(raw_block, 0, sizeof(storage::RawBlock));
+    storage::InitializeRawBlock(raw_block, layout, 0);
+
+    std::unordered_map<uint32_t, testutil::FakeRawTuple> tuples;
+
+    storage::Block *block = reinterpret_cast<storage::Block *>(raw_block);
+
+    const uint32_t num_insert = 10; 
+    
+    for (uint32_t j = 0; j < num_insert; j++) {
+      testutil::TryInsertFakeTuple(layout, tested, block, tuples, generator);
+    }
   }
 }
   
