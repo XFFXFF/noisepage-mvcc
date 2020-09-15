@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(noisepage-mvcc)
 
+include(CTest)
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
 set(NOISEPAGE_SRC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/include)
