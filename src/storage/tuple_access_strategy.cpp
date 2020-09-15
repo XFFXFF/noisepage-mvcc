@@ -12,7 +12,7 @@ void InitializeRawBlock(RawBlock *raw,
   block->num_records_ = 0;
   block->NumSlots() = layout.num_slots_;
 
-  uint32_t attr_offset = layout.HeaderSize();
+  uint32_t attr_offset = layout.header_size_;
   for (auto i = 0; i < layout.num_cols_; i++) {
     block->AttrOffsets()[i] = attr_offset;
     attr_offset += layout.attr_sizes_[i] * layout.num_slots_;
