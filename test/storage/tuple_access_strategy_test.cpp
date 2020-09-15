@@ -52,7 +52,7 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
 }
 
 TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
-  const uint32_t repeat = 2;
+  const uint32_t repeat = 5;
   const uint16_t max_col = 1000;
   std::default_random_engine generator;
   storage::RawBlock *raw_block = new storage::RawBlock();
@@ -70,6 +70,16 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
     
     for (uint32_t j = 0; j < num_insert; j++) {
       testutil::TryInsertFakeTuple(layout, tested, block, tuples, generator);
+    }
+
+    for (const auto &tuple : tuples) {
+      auto offset = tuple.first;
+      for (uint16_t col_id = 0; col_id < layout.num_cols_; col_id++) {
+        auto val1 = tuple.second.Attribute(col_id);
+        byte *pos = tested.AccessWithNullCheck(block, col_id, offset);
+        auto val2 = testutil::ReadByteValue(layout.attr_sizes_[col_id], pos);
+        EXPECT_EQ(val1, val2);
+      }
     }
   }
 }
