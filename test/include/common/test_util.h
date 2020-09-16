@@ -1,6 +1,8 @@
 #pragma once
 
 #include <random>
+#include <functional>
+#include <thread>
 #include "storage/tuple_access_strategy.h"
 
 namespace noisepage
@@ -24,6 +26,17 @@ storage::BlockLayout RandomLayout(Random &generator, uint16_t max_col=UINT16_MAX
   }
   return {num_attrs, attr_sizes};
 }  
+
+void RunThreadUntilFinish(uint32_t num_threads,
+                          const std::function<void(uint32_t)> &workload) {
+  std::vector<std::thread> threads;
+  for (auto i = 0; i < num_threads; i++) {
+    threads.emplace_back([i, &workload] { workload(i); });
+  }
+  for (auto &thread : threads) {
+    thread.join();
+  }
+} 
 
 } // namespace testutil
 } // namespace noisepage

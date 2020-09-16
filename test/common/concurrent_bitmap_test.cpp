@@ -1,9 +1,8 @@
 #include "common/concurrent_bitmap.h"
 #include "gtest/gtest.h"
+#include "common/test_util.h"
 #include <bitset>
 #include <random>
-#include <functional>
-#include <thread>
 
 namespace noisepage
 {
@@ -13,17 +12,6 @@ void CheckReferenceBitmap(const ConcurrentBitmap<N> &bitmap, const std::bitset<N
     EXPECT_EQ(bitmap[i], stl_bitmap[i]);
   }
 }
-
-void RunThreadUntilFinish(uint32_t num_threads,
-                          const std::function<void(uint32_t)> &workload) {
-  std::vector<std::thread> threads;
-  for (auto i = 0; i < num_threads; i++) {
-    threads.emplace_back([i, &workload] { workload(i); });
-  }
-  for (auto &thread : threads) {
-    thread.join();
-  }
-} 
 
 class ConcurrentBitmapTests : public ::testing::Test {}; 
 
@@ -67,7 +55,7 @@ TEST_F(ConcurrentBitmapTests, ConcurrentCorrectnessTest) {
     }
   };
 
-  RunThreadUntilFinish(num_threads, workload);
+  testutil::RunThreadUntilFinish(num_threads, workload);
 
   std::vector<uint32_t> all_elements;
   for (auto i = 0; i < num_threads; i++) {
