@@ -86,7 +86,7 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
 
 TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
   std::default_random_engine generator;
-  const uint32_t repeat = 10;
+  const uint32_t repeat = 100;
   const uint16_t max_col = 1000;
   const uint32_t num_thread = 8;
   storage::RawBlock *raw_block = new storage::RawBlock();
@@ -101,9 +101,10 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
     std::vector<std::unordered_map<uint32_t, testutil::FakeRawTuple>> tuples(num_thread);
 
     auto workload = [&](uint32_t thread_id) {
-      uint32_t num_insert = 10;
+      std::default_random_engine thread_generator(thread_id);
+      uint32_t num_insert = layout.num_slots_ / num_thread ? layout.num_slots_ < 100000 : 1000;
       for (uint32_t j = 0; j < num_insert; j++) {
-        testutil::TryInsertFakeTuple(layout, tested, block, tuples[thread_id], generator);
+        testutil::TryInsertFakeTuple(layout, tested, block, tuples[thread_id], thread_generator);
       }
     };
 
@@ -118,6 +119,7 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
         }
       }
     }
+
   }
 }
   

@@ -30,9 +30,13 @@ class RawConcurrentBitmap {
 
     bool Flip(uint32_t pos, bool expected) {
       auto mask = ONE_HOT_MASK(pos % BYTE_SIZE);
-      auto old_val = bits_[pos / BYTE_SIZE].load();
-      if (static_cast<bool>(old_val & mask) == expected) {
-        return bits_[pos / BYTE_SIZE].compare_exchange_strong(old_val, old_val ^ mask);
+      // 这里用for循环是有道理的，多个thread可能同时修改同一byte的不同bit
+      for (auto old_val = bits_[pos / BYTE_SIZE].load();
+           static_cast<bool>(old_val & mask) == expected;
+           old_val = bits_[pos / BYTE_SIZE].load()) {
+        if (bits_[pos / BYTE_SIZE].compare_exchange_strong(old_val, old_val ^ mask)) {
+          return true;
+        }
       }
       return false;
     }
