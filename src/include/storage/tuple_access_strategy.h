@@ -69,7 +69,7 @@ struct MiniBlock {
     }
 
     byte *ColumnStart(const BlockLayout &layout) {
-      return varlen_contents_ + BitmapSize(layout.num_cols_);
+      return varlen_contents_ + BitmapSize(layout.num_slots_);
     }
     byte varlen_contents_[0] {};
 };

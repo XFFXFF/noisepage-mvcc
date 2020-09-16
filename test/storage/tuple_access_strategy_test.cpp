@@ -66,7 +66,7 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
 
     storage::Block *block = reinterpret_cast<storage::Block *>(raw_block);
 
-    const uint32_t num_insert = 10; 
+    const uint32_t num_insert = 100; 
     
     for (uint32_t j = 0; j < num_insert; j++) {
       testutil::TryInsertFakeTuple(layout, tested, block, tuples, generator);
