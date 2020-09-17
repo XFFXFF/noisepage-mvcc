@@ -6,21 +6,29 @@
 
 namespace noisepage
 {
-class TupleAccessStrategyTests : public ::testing::Test {};
+struct TupleAccessStrategyTests : public ::testing::Test {
+  storage::RawBlock *raw_block_ = nullptr;
+  protected:
+    void SetUp() override {
+      raw_block_ = new storage::RawBlock();
+    }
+
+    void TearDown() override {
+      delete raw_block_;
+    }
+};
 
 TEST_F(TupleAccessStrategyTests, NullTest) {
   std::default_random_engine generator;
-
-  storage::RawBlock *raw_block = new storage::RawBlock();
 
   const uint32_t repeat = 5;
   for (auto i = 0; i < repeat; i++) {
     storage::BlockLayout layout = testutil::RandomLayout(generator);
     storage::TupleAccessStrategy tested(layout);
-    memset(raw_block, 0, sizeof(storage::RawBlock));
-    storage::InitializeRawBlock(raw_block, layout, 0);
+    memset(raw_block_, 0, sizeof(storage::RawBlock));
+    storage::InitializeRawBlock(raw_block_, layout, 0);
 
-    auto *block = reinterpret_cast<storage::Block *>(raw_block);
+    auto *block = reinterpret_cast<storage::Block *>(raw_block_);
 
     uint32_t offset;
     EXPECT_TRUE(tested.Allocate(block, offset));
@@ -55,16 +63,15 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
   const uint32_t repeat = 5;
   const uint16_t max_col = 1000;
   std::default_random_engine generator;
-  storage::RawBlock *raw_block = new storage::RawBlock();
   for (uint32_t i = 0; i < repeat; i++) {
     storage::BlockLayout layout = testutil::RandomLayout(generator, max_col);
     storage::TupleAccessStrategy tested(layout);
-    memset(raw_block, 0, sizeof(storage::RawBlock));
-    storage::InitializeRawBlock(raw_block, layout, 0);
+    memset(raw_block_, 0, sizeof(storage::RawBlock));
+    storage::InitializeRawBlock(raw_block_, layout, 0);
 
     std::unordered_map<uint32_t, testutil::FakeRawTuple> tuples;
 
-    storage::Block *block = reinterpret_cast<storage::Block *>(raw_block);
+    storage::Block *block = reinterpret_cast<storage::Block *>(raw_block_);
 
     const uint32_t num_insert = 100; 
     
@@ -89,14 +96,13 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
   const uint32_t repeat = 100;
   const uint16_t max_col = 1000;
   const uint32_t num_thread = 8;
-  storage::RawBlock *raw_block = new storage::RawBlock();
 
   for (uint32_t i = 0; i < repeat; i++) {
     storage::BlockLayout layout = testutil::RandomLayout(generator, max_col);
     storage::TupleAccessStrategy tested(layout);
-    memset(raw_block, 0, sizeof(storage::RawBlock));
-    storage::InitializeRawBlock(raw_block, layout, 0);
-    storage::Block *block = reinterpret_cast<storage::Block *>(raw_block);
+    memset(raw_block_, 0, sizeof(storage::RawBlock));
+    storage::InitializeRawBlock(raw_block_, layout, 0);
+    storage::Block *block = reinterpret_cast<storage::Block *>(raw_block_);
 
     std::vector<std::unordered_map<uint32_t, testutil::FakeRawTuple>> tuples(num_thread);
 

@@ -49,9 +49,19 @@ void WriteByteValue(uint8_t attr_size, uint64_t val, byte *pos) {
   }
 }
 
+template<typename Random>
+void RandomTupleContent(const storage::BlockLayout &layout, byte *contents, Random &generator) {
+  std::uniform_int_distribution<uint8_t> dist(0, UINT8_MAX);
+  for (uint16_t i = 0; i < layout.num_cols_; i++) {
+    contents[i] = static_cast<byte>(dist(generator));
+  }
+}
+
 struct FakeRawTuple {
-  FakeRawTuple(const storage::BlockLayout layout, byte *contents) 
-      : layout_(layout), contents_(contents) {
+  template<typename Random>
+  FakeRawTuple(const storage::BlockLayout layout, Random &generator) 
+      : layout_(layout), contents_(new byte[layout.tuple_size_]) {
+    RandomTupleContent(layout, contents_, generator);
     uint32_t pos = 0;
     for (auto attr_size : layout_.attr_sizes_) {
       attr_offsets_.push_back(pos);
@@ -59,9 +69,8 @@ struct FakeRawTuple {
     }
   }
   
-  // 这个析构函数非常的奇怪，这样内存很容易泄露
   ~FakeRawTuple() {
-    delete contents_;
+    delete[] contents_;
   }
 
   uint64_t Attribute(uint16_t col_id) const {
@@ -73,16 +82,6 @@ struct FakeRawTuple {
   std::vector<uint32_t> attr_offsets_;
   byte *contents_;
 };
-
-template<typename Random>
-byte *RandomTupleContent(const storage::BlockLayout &layout, Random &generator) {
-  byte *contents = new byte[layout.tuple_size_];
-  std::uniform_int_distribution<uint8_t> dist(0, UINT8_MAX);
-  for (uint16_t i = 0; i < layout.num_cols_; i++) {
-    contents[i] = static_cast<byte>(dist(generator));
-  }
-  return contents;
-}
 
 void InsertTuple(const FakeRawTuple &tuple,
                  const storage::BlockLayout &layout,
@@ -109,7 +108,7 @@ void TryInsertFakeTuple(const storage::BlockLayout &layout,
   auto result = tuples.emplace(
     std::piecewise_construct,
     std::forward_as_tuple(offset),
-    std::forward_as_tuple(layout, RandomTupleContent(layout, generator))
+    std::forward_as_tuple(layout, generator)
   );
 
   EXPECT_TRUE(result.second);
