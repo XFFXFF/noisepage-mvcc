@@ -17,5 +17,5 @@ foreach(test_src ${test_srcs})
         noisepage
         ${NOISEPAGE_LINKER_LIBS}
     )
-    add_test(${test_name} ${CMAKE_BINARY_DIR}/test/${test_name} --gtest_color=yes)
+    add_test(${test_name} ${BUILD_OUTPUT_ROOT_DIRECTORY}/${test_name} --gtest_color=yes)
 endforeach(test_src ${test_srcs})
