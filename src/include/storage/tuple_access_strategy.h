@@ -47,7 +47,7 @@ private:
 class RawBlock {
 public:
   byte content_[BLOCK_SIZE];
-};
+} __attribute__((aligned(BLOCK_SIZE))); 
 
 /**
  * mini block存储一列数据

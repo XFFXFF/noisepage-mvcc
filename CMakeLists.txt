@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(noisepage-mvcc)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message("Setting build type to 'RelWithDebInfo' as none was specified.")
