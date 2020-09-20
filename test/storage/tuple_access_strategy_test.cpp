@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "storage/tuple_access_strategy.h"
 #include "storage/tuple_access_strategy_test_util.h"
-#include "common/test_util.h"
+#include "storage/storage_test_util.h"
 
 namespace noisepage
 {

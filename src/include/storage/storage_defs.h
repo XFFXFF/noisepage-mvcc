@@ -1,5 +1,6 @@
 #pragma once
 #include "common/macros.h"
+#include "common/concurrent_bitmap.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -74,6 +75,7 @@ private:
 };
 
 /**
+ * 注意：ProjectedRow是不包含col_id0的
  * ------------------------------------------------------------------------
  * | num_cols | col_id1 | col_id2 | ... | val1_offset | val2_offset | ... |
  * ------------------------------------------------------------------------
@@ -86,9 +88,26 @@ public:
   DISALLOW_COPY_AND_MOVE(ProjectedRow);
   ~ProjectedRow() = delete;
 
+  static uint32_t Size(const BlockLayout &layout);
+
   static ProjectedRow *
-  InitializeProjectedRow(byte *head, const std::vector<uint16_t> col_ids,
-                         const BlockLayout &layout);
+  InitializeProjectedRow(byte *head, const BlockLayout &layout);
+  
+  uint16_t &NumColumns() {
+    return num_cols_;
+  }
+
+  uint16_t *ColumnIds() {
+    return reinterpret_cast<uint16_t *>(varlen_contents_);
+  }
+
+  uint32_t *AttrValueOffset() {
+    return reinterpret_cast<uint32_t *>(ColumnIds() + num_cols_);
+  }
+
+  RawConcurrentBitmap *NullBitmap() {
+    return reinterpret_cast<RawConcurrentBitmap *>(AttrValueOffset() + num_cols_);
+  }
 
 private:
   uint16_t num_cols_;
