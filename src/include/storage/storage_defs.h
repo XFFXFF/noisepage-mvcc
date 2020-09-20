@@ -1,6 +1,6 @@
 #pragma once
-#include "common/macros.h"
 #include "common/concurrent_bitmap.h"
+#include "common/macros.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -75,12 +75,23 @@ private:
 };
 
 /**
- * 注意：ProjectedRow是不包含col_id0的
+ * projected row可能只是包含一个record的部分列
+ * A projected row is a partial row image of a tuple. It also encodes
+ * a projection list that allows for reordering of the columns. Its in-memory
+ * layout:
  * ------------------------------------------------------------------------
  * | num_cols | col_id1 | col_id2 | ... | val1_offset | val2_offset | ... |
  * ------------------------------------------------------------------------
  * | null-bitmap (pad up to byte) | val1 | val2 | ...                     |
  * ------------------------------------------------------------------------
+ * Warning, 0 means null in the null-bitmap
+ *
+ * The projection list is encoded as position of col_id -> col_id. For example:
+ *
+ * ---------------------------------------------------
+ * | 3 | 1 | 0 | 2 | 0 | 4 | 8 | 0xC0 | 721 | 15 | x |
+ * ---------------------------------------------------
+ * Would be the row: { 0 -> 15, 1 -> 721, 2 -> nul}
  */
 class ProjectedRow {
 public:
@@ -88,14 +99,14 @@ public:
   DISALLOW_COPY_AND_MOVE(ProjectedRow);
   ~ProjectedRow() = delete;
 
-  static uint32_t Size(const BlockLayout &layout);
+  static uint32_t Size(const BlockLayout &layout,
+                       const std::vector<uint16_t> &col_ids);
 
   static ProjectedRow *
-  InitializeProjectedRow(byte *head, const BlockLayout &layout);
-  
-  uint16_t &NumColumns() {
-    return num_cols_;
-  }
+  InitializeProjectedRow(byte *head, const BlockLayout &layout,
+                         const std::vector<uint16_t> &col_ids);
+
+  uint16_t &NumColumns() { return num_cols_; }
 
   uint16_t *ColumnIds() {
     return reinterpret_cast<uint16_t *>(varlen_contents_);
@@ -106,7 +117,8 @@ public:
   }
 
   RawConcurrentBitmap *NullBitmap() {
-    return reinterpret_cast<RawConcurrentBitmap *>(AttrValueOffset() + num_cols_);
+    return reinterpret_cast<RawConcurrentBitmap *>(AttrValueOffset() +
+                                                   num_cols_);
   }
 
 private:
