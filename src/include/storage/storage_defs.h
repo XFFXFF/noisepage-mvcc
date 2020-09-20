@@ -121,6 +121,17 @@ public:
                                                    num_cols_);
   }
 
+  byte *AccessWithNullCheck(uint16_t offset) {
+    if (!NullBitmap()->Test(offset)) {
+      return nullptr;
+    }
+    return reinterpret_cast<byte *>(this) + AttrValueOffset()[offset];
+  }
+
+  byte *AccessForceNotNull(uint16_t offset) {
+    NullBitmap()->Flip(offset, false);
+    return reinterpret_cast<byte *>(this) + AttrValueOffset()[offset];
+  }
 private:
   uint16_t num_cols_;
   byte varlen_contents_[0];
