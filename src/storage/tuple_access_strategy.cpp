@@ -1,3 +1,4 @@
+#include "storage/storage_defs.h"
 #include "storage/tuple_access_strategy.h"
 
 namespace noisepage
