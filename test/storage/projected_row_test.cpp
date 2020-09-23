@@ -26,7 +26,7 @@ TEST_F(ProjectedRowTests, SimpleTest) {
     }
 
     testutil::PopulateRandomRow(redo, layout, generator);
-    testutil::PrintRow(redo, layout);
+    /* testutil::PrintRow(redo, layout); */
   }
 }
 }
