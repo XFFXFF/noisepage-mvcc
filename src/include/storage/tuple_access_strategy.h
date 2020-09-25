@@ -72,13 +72,13 @@ class TupleAccessStrategy {
 public:
   TupleAccessStrategy(const BlockLayout &layout) : layout_(layout) {}
 
-  RawConcurrentBitmap *ColumnNullBitmap(Block *block, uint16_t col_offset) {
-    return block->Column(col_offset)->NullBitmap();
+  RawConcurrentBitmap *ColumnNullBitmap(RawBlock *block, uint16_t col_offset) {
+    return reinterpret_cast<Block *>(block)->Column(col_offset)->NullBitmap();
   }
 
-  bool Allocate(Block *block, uint32_t &offset) {
+  bool Allocate(RawBlock *block, uint32_t &offset) {
     auto *null_bitmap = ColumnNullBitmap(block, 0);
-    for (auto i = 0; i < layout_.num_slots_; i++) {
+    for (uint32_t i = 0; i < layout_.num_slots_; i++) {
       if (null_bitmap->Flip(i, false)) {
         offset = i;
         return true;
@@ -87,19 +87,19 @@ public:
     return false;
   }
 
-  byte *ColumnAt(Block *block, uint16_t col_id, uint32_t offset) {
-    byte *column_start = block->Column(col_id)->ColumnStart(layout_);
+  byte *ColumnAt(RawBlock *block, uint16_t col_id, uint32_t offset) {
+    byte *column_start = reinterpret_cast<Block *>(block)->Column(col_id)->ColumnStart(layout_);
     return column_start + offset * layout_.attr_sizes_[col_id];
   }
 
-  byte *AccessWithNullCheck(Block *block, uint16_t col_id, uint32_t offset) {
+  byte *AccessWithNullCheck(RawBlock *block, uint16_t col_id, uint32_t offset) {
     if (!ColumnNullBitmap(block, col_id)->Test(offset)) {
       return nullptr;
     }
     return ColumnAt(block, col_id, offset);
   }
 
-  byte *AccessForceNotNull(Block *block, uint16_t col_id, uint32_t offset) {
+  byte *AccessForceNotNull(RawBlock *block, uint16_t col_id, uint32_t offset) {
     ColumnNullBitmap(block, col_id)->Flip(offset, false);
     return ColumnAt(block, col_id, offset);
   }

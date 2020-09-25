@@ -28,20 +28,18 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
     memset(raw_block_, 0, sizeof(storage::RawBlock));
     storage::InitializeRawBlock(raw_block_, layout, 0);
 
-    auto *block = reinterpret_cast<storage::Block *>(raw_block_);
-
     uint32_t offset;
-    EXPECT_TRUE(tested.Allocate(block, offset));
+    EXPECT_TRUE(tested.Allocate(raw_block_, offset));
 
-    EXPECT_TRUE(tested.AccessWithNullCheck(block, 0, offset) != nullptr);
+    EXPECT_TRUE(tested.AccessWithNullCheck(raw_block_, 0, offset) != nullptr);
     for (uint16_t j = 1; j < layout.num_cols_; j++) {
-      EXPECT_FALSE(tested.AccessWithNullCheck(block, j, offset) != nullptr);
+      EXPECT_FALSE(tested.AccessWithNullCheck(raw_block_, j, offset) != nullptr);
     }
 
     std::vector<bool> nulls(layout.num_cols_);
     for (uint16_t j = 1; j < layout.num_cols_; j++) {
       if (std::bernoulli_distribution(0.5)(generator)) {
-        tested.AccessForceNotNull(block, j, offset);
+        tested.AccessForceNotNull(raw_block_, j, offset);
         nulls[j] = false;
       } else {
         nulls[j] = true;
@@ -50,9 +48,9 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
 
     for (uint16_t j = 1; j < layout.num_cols_; j++) {
       if (nulls[j]) {
-        EXPECT_FALSE(tested.AccessWithNullCheck(block, j, offset) != nullptr);
+        EXPECT_FALSE(tested.AccessWithNullCheck(raw_block_, j, offset) != nullptr);
       } else {
-        EXPECT_TRUE(tested.AccessWithNullCheck(block, j, offset) != nullptr);
+        EXPECT_TRUE(tested.AccessWithNullCheck(raw_block_, j, offset) != nullptr);
       }
     }
 
@@ -71,19 +69,17 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
 
     std::unordered_map<uint32_t, testutil::FakeRawTuple> tuples;
 
-    storage::Block *block = reinterpret_cast<storage::Block *>(raw_block_);
-
     const uint32_t num_insert = 100; 
     
     for (uint32_t j = 0; j < num_insert; j++) {
-      testutil::TryInsertFakeTuple(layout, tested, block, tuples, generator);
+      testutil::TryInsertFakeTuple(layout, tested, raw_block_, tuples, generator);
     }
 
     for (const auto &tuple : tuples) {
       auto offset = tuple.first;
       for (uint16_t col_id = 0; col_id < layout.num_cols_; col_id++) {
         auto val1 = tuple.second.Attribute(col_id);
-        byte *pos = tested.AccessWithNullCheck(block, col_id, offset);
+        byte *pos = tested.AccessWithNullCheck(raw_block_, col_id, offset);
         auto val2 = testutil::ReadByteValue(layout.attr_sizes_[col_id], pos);
         EXPECT_EQ(val1, val2);
       }
@@ -102,7 +98,6 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
     storage::TupleAccessStrategy tested(layout);
     memset(raw_block_, 0, sizeof(storage::RawBlock));
     storage::InitializeRawBlock(raw_block_, layout, 0);
-    storage::Block *block = reinterpret_cast<storage::Block *>(raw_block_);
 
     std::vector<std::unordered_map<uint32_t, testutil::FakeRawTuple>> tuples(num_thread);
 
@@ -110,7 +105,7 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
       std::default_random_engine thread_generator(thread_id);
       uint32_t num_insert = layout.num_slots_ / num_thread ? layout.num_slots_ < 100000 : 1000;
       for (uint32_t j = 0; j < num_insert; j++) {
-        testutil::TryInsertFakeTuple(layout, tested, block, tuples[thread_id], thread_generator);
+        testutil::TryInsertFakeTuple(layout, tested, raw_block_, tuples[thread_id], thread_generator);
       }
     };
 
@@ -119,7 +114,7 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
       for (auto &tuple : thread_tuple) {
         for (uint16_t col_id = 0; col_id < layout.num_cols_; col_id++) {
           auto val1 = tuple.second.Attribute(col_id);
-          auto *pos = tested.AccessWithNullCheck(block, col_id, tuple.first);
+          auto *pos = tested.AccessWithNullCheck(raw_block_, col_id, tuple.first);
           auto val2 = testutil::ReadByteValue(layout.attr_sizes_[col_id], pos);
           EXPECT_EQ(val1, val2);
         }

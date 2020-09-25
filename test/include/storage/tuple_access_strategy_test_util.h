@@ -86,7 +86,7 @@ struct FakeRawTuple {
 void InsertTuple(const FakeRawTuple &tuple,
                  const storage::BlockLayout &layout,
                  storage::TupleAccessStrategy &tested,
-                 storage::Block *block,
+                 storage::RawBlock *block,
                  uint32_t offset) {
   for (uint16_t i = 0; i < layout.num_cols_; i++) {
     auto *pos = tested.AccessForceNotNull(block, i, offset);
@@ -98,7 +98,7 @@ void InsertTuple(const FakeRawTuple &tuple,
 template<typename Random>
 void TryInsertFakeTuple(const storage::BlockLayout &layout,
                         storage::TupleAccessStrategy &tested,
-                        storage::Block *block,
+                        storage::RawBlock *block,
                         std::unordered_map<uint32_t, FakeRawTuple> &tuples,
                         Random &generator) {
   uint32_t offset;
