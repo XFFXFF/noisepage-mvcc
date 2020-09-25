@@ -1,6 +1,7 @@
 #pragma once
 #include "common/concurrent_bitmap.h"
 #include "common/macros.h"
+#include "common/object_pool.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -73,6 +74,8 @@ public:
 private:
   uintptr_t bytes_;
 };
+
+using BlockStore = ObjectPool<RawBlock>;
 
 /**
  * projected row可能只是包含一个record的部分列
