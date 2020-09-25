@@ -28,8 +28,9 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
     memset(raw_block_, 0, sizeof(storage::RawBlock));
     storage::InitializeRawBlock(raw_block_, layout, 0);
 
-    uint32_t offset;
-    EXPECT_TRUE(tested.Allocate(raw_block_, offset));
+    storage::TupleSlot slot;
+    EXPECT_TRUE(tested.Allocate(raw_block_, slot));
+    uint32_t offset = slot.GetOffset();
 
     EXPECT_TRUE(tested.AccessWithNullCheck(raw_block_, 0, offset) != nullptr);
     for (uint16_t j = 1; j < layout.num_cols_; j++) {

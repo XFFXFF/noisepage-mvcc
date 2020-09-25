@@ -55,6 +55,7 @@ void InitializeRawBlock(RawBlock *raw, const BlockLayout &layout,
 
 class TupleSlot {
 public:
+  TupleSlot() : bytes_(0) {}
   TupleSlot(RawBlock *block, uint32_t offset)
       : bytes_((uintptr_t)(block) | static_cast<uintptr_t>(offset)) {
     assert(!(uintptr_t(block) & static_cast<uintptr_t>(BLOCK_SIZE - 1)));

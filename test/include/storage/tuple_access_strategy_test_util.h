@@ -101,8 +101,9 @@ void TryInsertFakeTuple(const storage::BlockLayout &layout,
                         storage::RawBlock *block,
                         std::unordered_map<uint32_t, FakeRawTuple> &tuples,
                         Random &generator) {
-  uint32_t offset;
-  EXPECT_TRUE(tested.Allocate(block, offset));
+  storage::TupleSlot slot;
+  EXPECT_TRUE(tested.Allocate(block, slot));
+  uint32_t offset = slot.GetOffset();
   EXPECT_TRUE(tested.ColumnNullBitmap(block, 0)->Test(offset));
 
   auto result = tuples.emplace(

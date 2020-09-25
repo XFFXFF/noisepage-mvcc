@@ -76,11 +76,11 @@ public:
     return reinterpret_cast<Block *>(block)->Column(col_offset)->NullBitmap();
   }
 
-  bool Allocate(RawBlock *block, uint32_t &offset) {
+  bool Allocate(RawBlock *block, TupleSlot &slot) {
     auto *null_bitmap = ColumnNullBitmap(block, 0);
     for (uint32_t i = 0; i < layout_.num_slots_; i++) {
       if (null_bitmap->Flip(i, false)) {
-        offset = i;
+        slot = TupleSlot(block, i);
         return true;
       }
     }
