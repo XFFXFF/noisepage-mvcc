@@ -104,6 +104,7 @@ public:
     return ColumnAt(block, col_id, offset);
   }
 
+  const BlockLayout &GetBlockLayout() const { return layout_; }
 private:
   const BlockLayout layout_;
 };

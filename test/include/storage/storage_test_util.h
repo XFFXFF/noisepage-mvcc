@@ -51,6 +51,14 @@ void PrintRow(storage::ProjectedRow *row, const storage::BlockLayout &layout) {
     }
   }
 }
+
+std::vector<uint16_t> ProjectionListAllColumns(const storage::BlockLayout &layout) {
+  std::vector<uint16_t> col_ids(layout.num_cols_ - 1);
+  for (uint16_t i = 1; i < layout.num_cols_; i++) {
+    col_ids[i - 1] = i;
+  }
+  return col_ids;
+}
  
 } // namespace testutil
 
