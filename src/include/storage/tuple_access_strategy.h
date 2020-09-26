@@ -104,6 +104,10 @@ public:
     return ColumnAt(block, col_id, offset);
   }
 
+  void SetNull(RawBlock *block, uint32_t col_id, uint32_t offset) {
+    ColumnNullBitmap(block, col_id)->Flip(offset, true);
+  }
+
   const BlockLayout &GetBlockLayout() const { return layout_; }
 private:
   const BlockLayout layout_;

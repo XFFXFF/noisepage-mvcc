@@ -36,7 +36,7 @@ TEST_F(DataTableTests, SimpleTest) {
     data_table.Select(slot, select_row);
 
     for (uint16_t i = 0; i < select_row->NumColumns(); i++) {
-      EXPECT_FALSE(select_row->AccessWithNullCheck(i) != nullptr);
+      EXPECT_TRUE(select_row->AccessWithNullCheck(i) != nullptr);
     }
 
     delete redo_buffer;
