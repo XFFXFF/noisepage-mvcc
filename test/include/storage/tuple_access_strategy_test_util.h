@@ -88,8 +88,9 @@ void InsertTuple(const FakeRawTuple &tuple,
                  storage::TupleAccessStrategy &tested,
                  storage::RawBlock *block,
                  uint32_t offset) {
+  storage::TupleSlot slot(block, offset);
   for (uint16_t i = 0; i < layout.num_cols_; i++) {
-    auto *pos = tested.AccessForceNotNull(block, i, offset);
+    auto *pos = tested.AccessForceNotNull(slot, i);
     uint64_t val = tuple.Attribute(i);
     WriteByteValue(layout.attr_sizes_[i], val, pos);
   }

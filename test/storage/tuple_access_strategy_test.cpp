@@ -30,17 +30,16 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
 
     storage::TupleSlot slot;
     EXPECT_TRUE(tested.Allocate(raw_block_, slot));
-    uint32_t offset = slot.GetOffset();
 
-    EXPECT_TRUE(tested.AccessWithNullCheck(raw_block_, 0, offset) != nullptr);
+    EXPECT_TRUE(tested.AccessWithNullCheck(slot, 0) != nullptr);
     for (uint16_t j = 1; j < layout.num_cols_; j++) {
-      EXPECT_FALSE(tested.AccessWithNullCheck(raw_block_, j, offset) != nullptr);
+      EXPECT_FALSE(tested.AccessWithNullCheck(slot, j) != nullptr);
     }
 
     std::vector<bool> nulls(layout.num_cols_);
     for (uint16_t j = 1; j < layout.num_cols_; j++) {
       if (std::bernoulli_distribution(0.5)(generator)) {
-        tested.AccessForceNotNull(raw_block_, j, offset);
+        tested.AccessForceNotNull(slot, j);
         nulls[j] = false;
       } else {
         nulls[j] = true;
@@ -49,9 +48,9 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
 
     for (uint16_t j = 1; j < layout.num_cols_; j++) {
       if (nulls[j]) {
-        EXPECT_FALSE(tested.AccessWithNullCheck(raw_block_, j, offset) != nullptr);
+        EXPECT_FALSE(tested.AccessWithNullCheck(slot, j) != nullptr);
       } else {
-        EXPECT_TRUE(tested.AccessWithNullCheck(raw_block_, j, offset) != nullptr);
+        EXPECT_TRUE(tested.AccessWithNullCheck(slot, j) != nullptr);
       }
     }
 
@@ -80,7 +79,8 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
       auto offset = tuple.first;
       for (uint16_t col_id = 0; col_id < layout.num_cols_; col_id++) {
         auto val1 = tuple.second.Attribute(col_id);
-        byte *pos = tested.AccessWithNullCheck(raw_block_, col_id, offset);
+        storage::TupleSlot slot(raw_block_, offset);
+        byte *pos = tested.AccessWithNullCheck(slot, col_id);
         auto val2 = testutil::ReadByteValue(layout.attr_sizes_[col_id], pos);
         EXPECT_EQ(val1, val2);
       }
@@ -115,7 +115,8 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
       for (auto &tuple : thread_tuple) {
         for (uint16_t col_id = 0; col_id < layout.num_cols_; col_id++) {
           auto val1 = tuple.second.Attribute(col_id);
-          auto *pos = tested.AccessWithNullCheck(raw_block_, col_id, tuple.first);
+          storage::TupleSlot slot(raw_block_, tuple.first);
+          auto *pos = tested.AccessWithNullCheck(slot, col_id);
           auto val2 = testutil::ReadByteValue(layout.attr_sizes_[col_id], pos);
           EXPECT_EQ(val1, val2);
         }

@@ -72,8 +72,8 @@ class TupleAccessStrategy {
 public:
   TupleAccessStrategy(const BlockLayout &layout) : layout_(layout) {}
 
-  RawConcurrentBitmap *ColumnNullBitmap(RawBlock *block, uint16_t col_offset) {
-    return reinterpret_cast<Block *>(block)->Column(col_offset)->NullBitmap();
+  RawConcurrentBitmap *ColumnNullBitmap(RawBlock *block, uint16_t col_id) {
+    return reinterpret_cast<Block *>(block)->Column(col_id)->NullBitmap();
   }
 
   bool Allocate(RawBlock *block, TupleSlot &slot) {
@@ -87,25 +87,25 @@ public:
     return false;
   }
 
-  byte *ColumnAt(RawBlock *block, uint16_t col_id, uint32_t offset) {
-    byte *column_start = reinterpret_cast<Block *>(block)->Column(col_id)->ColumnStart(layout_);
-    return column_start + offset * layout_.attr_sizes_[col_id];
+  byte *ColumnAt(TupleSlot slot, uint16_t col_id) {
+    byte *column_start = reinterpret_cast<Block *>(slot.GetBlock())->Column(col_id)->ColumnStart(layout_);
+    return column_start + slot.GetOffset() * layout_.attr_sizes_[col_id];
   }
 
-  byte *AccessWithNullCheck(RawBlock *block, uint16_t col_id, uint32_t offset) {
-    if (!ColumnNullBitmap(block, col_id)->Test(offset)) {
+  byte *AccessWithNullCheck(TupleSlot slot, uint16_t col_id) {
+    if (!ColumnNullBitmap(slot.GetBlock(), col_id)->Test(slot.GetOffset())) {
       return nullptr;
     }
-    return ColumnAt(block, col_id, offset);
+    return ColumnAt(slot, col_id);
   }
 
-  byte *AccessForceNotNull(RawBlock *block, uint16_t col_id, uint32_t offset) {
-    ColumnNullBitmap(block, col_id)->Flip(offset, false);
-    return ColumnAt(block, col_id, offset);
+  byte *AccessForceNotNull(TupleSlot slot, uint16_t col_id) {
+    ColumnNullBitmap(slot.GetBlock(), col_id)->Flip(slot.GetOffset(), false);
+    return ColumnAt(slot, col_id);
   }
 
-  void SetNull(RawBlock *block, uint32_t col_id, uint32_t offset) {
-    ColumnNullBitmap(block, col_id)->Flip(offset, true);
+  void SetNull(TupleSlot slot, uint32_t col_id) {
+    ColumnNullBitmap(slot.GetBlock(), col_id)->Flip(slot.GetOffset(), true);
   }
 
   const BlockLayout &GetBlockLayout() const { return layout_; }

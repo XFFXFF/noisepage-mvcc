@@ -46,7 +46,7 @@ public:
                                      uint16_t projection_list_offset) {
     uint16_t col_id = to->ColumnIds()[projection_list_offset];
     uint8_t attr_size = accessor.GetBlockLayout().attr_sizes_[col_id];
-    auto *store_attr = accessor.AccessWithNullCheck(slot.GetBlock(), col_id, slot.GetOffset());
+    auto *store_attr = accessor.AccessWithNullCheck(slot, col_id);
     
     if (store_attr == nullptr) {
       to->SetNull(projection_list_offset);
@@ -64,9 +64,9 @@ public:
     uint16_t col_id = from->ColumnIds()[projection_list_offset];
     uint8_t attr_size = accessor.GetBlockLayout().attr_sizes_[col_id];
     if (store_attr == nullptr) {
-      accessor.SetNull(slot.GetBlock(), col_id, slot.GetOffset());
+      accessor.SetNull(slot, col_id);
     } else {
-      auto *dest = accessor.AccessForceNotNull(slot.GetBlock(), col_id, slot.GetOffset());
+      auto *dest = accessor.AccessForceNotNull(slot, col_id);
       WriteBytes(attr_size, ReadBytes(attr_size, store_attr), dest);
     }
   }
