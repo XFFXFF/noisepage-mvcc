@@ -136,6 +136,11 @@ public:
     NullBitmap()->Flip(offset, false);
     return reinterpret_cast<byte *>(this) + AttrValueOffset()[offset];
   }
+
+  void SetNull(uint16_t offset) {
+    NullBitmap()->Flip(offset, true);
+  }
+
 private:
   uint16_t num_cols_;
   byte varlen_contents_[0];
