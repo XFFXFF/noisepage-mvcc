@@ -64,7 +64,7 @@ public:
 
   RawBlock *GetBlock() {
     return reinterpret_cast<RawBlock *>(
-        bytes_ & static_cast<uintptr_t>(~(BLOCK_SIZE - 1)));
+        bytes_ & ~static_cast<uintptr_t>(BLOCK_SIZE - 1));
   }
 
   uint32_t GetOffset() {
