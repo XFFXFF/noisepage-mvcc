@@ -6,16 +6,16 @@ namespace noisepage::storage {
 class StorageUtil {
 public:
   StorageUtil() = delete;
-  static uint64_t ReadBytes(uint8_t size, byte *pos) {
+  static uint64_t ReadBytes(uint8_t size, const byte *pos) {
     switch (size) {
     case 1:
-      return *reinterpret_cast<uint8_t *>(pos);
+      return *reinterpret_cast<const uint8_t *>(pos);
     case 2:
-      return *reinterpret_cast<uint16_t *>(pos);
+      return *reinterpret_cast<const uint16_t *>(pos);
     case 4:
-      return *reinterpret_cast<uint32_t *>(pos);
+      return *reinterpret_cast<const uint32_t *>(pos);
     case 8:
-      return *reinterpret_cast<uint64_t *>(pos);
+      return *reinterpret_cast<const uint64_t *>(pos);
     default:
       throw std::runtime_error("Invalid byte read value");
     }
@@ -56,12 +56,12 @@ public:
     }
   }
 
-  static void CopyAttrFromProjection(ProjectedRow *from,
+  static void CopyAttrFromProjection(const ProjectedRow &from,
                                      TupleAccessStrategy &accessor,
                                      TupleSlot &slot,
                                      uint16_t projection_list_offset) {
-    auto *store_attr = from->AccessWithNullCheck(projection_list_offset);
-    uint16_t col_id = from->ColumnIds()[projection_list_offset];
+    const byte *store_attr = from.AccessWithNullCheck(projection_list_offset);
+    uint16_t col_id = from.ColumnIds()[projection_list_offset];
     uint8_t attr_size = accessor.GetBlockLayout().attr_sizes_[col_id];
     if (store_attr == nullptr) {
       accessor.SetNull(slot, col_id);

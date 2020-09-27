@@ -16,11 +16,11 @@ void DataTable::Select(TupleSlot &slot, ProjectedRow *out_buffer) {
   }
 }
 
-TupleSlot DataTable::Insert(ProjectedRow &redo) {
+TupleSlot DataTable::Insert(const ProjectedRow &redo) {
   TupleSlot result;
   accessor_.Allocate(insertion_head_, result);
   for (uint16_t i = 0; i < redo.NumColumns(); i++) {
-    StorageUtil::CopyAttrFromProjection(&redo, accessor_, result, i);
+    StorageUtil::CopyAttrFromProjection(redo, accessor_, result, i);
   }
   return result;
 }

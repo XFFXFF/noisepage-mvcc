@@ -112,16 +112,31 @@ public:
 
   uint16_t &NumColumns() { return num_cols_; }
 
+  const uint16_t &NumColumns() const { return num_cols_; }
+
   uint16_t *ColumnIds() {
     return reinterpret_cast<uint16_t *>(varlen_contents_);
+  }
+
+  const uint16_t *ColumnIds() const {
+    return reinterpret_cast<const uint16_t *>(varlen_contents_);
   }
 
   uint32_t *AttrValueOffset() {
     return reinterpret_cast<uint32_t *>(ColumnIds() + num_cols_);
   }
 
+  const uint32_t *AttrValueOffset() const {
+    return reinterpret_cast<const uint32_t *>(ColumnIds() + num_cols_);
+  }
+
   RawConcurrentBitmap *NullBitmap() {
     return reinterpret_cast<RawConcurrentBitmap *>(AttrValueOffset() +
+                                                   num_cols_);
+  }
+
+  const RawConcurrentBitmap *NullBitmap() const {
+    return reinterpret_cast<const RawConcurrentBitmap *>(AttrValueOffset() +
                                                    num_cols_);
   }
 
@@ -130,6 +145,13 @@ public:
       return nullptr;
     }
     return reinterpret_cast<byte *>(this) + AttrValueOffset()[offset];
+  }
+
+  const byte *AccessWithNullCheck(uint16_t offset) const {
+    if (!NullBitmap()->Test(offset)) {
+      return nullptr;
+    }
+    return reinterpret_cast<const byte *>(this) + AttrValueOffset()[offset];
   }
 
   byte *AccessForceNotNull(uint16_t offset) {

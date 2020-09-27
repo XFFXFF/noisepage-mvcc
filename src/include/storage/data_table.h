@@ -15,7 +15,7 @@ public:
 
   void Select(TupleSlot &slot, ProjectedRow *out_buffer);
 
-  TupleSlot Insert(ProjectedRow &redo);
+  TupleSlot Insert(const ProjectedRow &redo);
 private:
   BlockStore block_store_;
   TupleAccessStrategy accessor_;
