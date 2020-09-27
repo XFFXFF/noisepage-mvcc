@@ -9,6 +9,7 @@
 
 namespace noisepage {
 using byte = std::byte;
+typedef uint64_t timestamp_t;
 
 namespace storage {
 constexpr uint32_t BLOCK_SIZE = 1048576u;
@@ -163,6 +164,43 @@ public:
 
 private:
   uint16_t num_cols_;
+  byte varlen_contents_[0];
+};
+
+class DeltaRecord {
+public:
+  DeltaRecord() = delete;
+  DISALLOW_COPY_AND_MOVE(DeltaRecord);
+  ~DeltaRecord() = delete;
+
+  DeltaRecord *next_;
+
+  timestamp_t timestamp_;
+
+  ProjectedRow *Delta() {
+    return reinterpret_cast<ProjectedRow *>(varlen_contents_);
+  }
+
+  static uint32_t Size(const BlockLayout &layout,
+                       const std::vector<uint16_t> &col_ids) {
+    return static_cast<uint32_t>(sizeof(DeltaRecord *)) +
+           static_cast<uint32_t>(sizeof(timestamp_t)) +
+           ProjectedRow::Size(layout, col_ids);
+  }
+
+  static DeltaRecord *
+  InitializeDeltaRecord(byte *head, timestamp_t timestamp,
+                        const BlockLayout &layout,
+                        const std::vector<uint16_t> &col_ids) {
+    DeltaRecord *delta_record = reinterpret_cast<DeltaRecord *>(head);
+    delta_record->timestamp_ = timestamp;
+    delta_record->next_ = nullptr;
+    ProjectedRow::InitializeProjectedRow(delta_record->varlen_contents_, layout,
+                                         col_ids);
+    return delta_record;
+  }
+
+private:
   byte varlen_contents_[0];
 };
 } // namespace storage
