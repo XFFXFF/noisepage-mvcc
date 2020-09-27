@@ -1,6 +1,8 @@
 #include "storage/data_table.h"
 #include "storage/storage_util.h"
 
+#define VERSION_VECTOR_COLUMN_ID 0
+
 namespace noisepage::storage {
 
 DataTable::DataTable(BlockStore store, BlockLayout layout) : block_store_(store), accessor_(layout) {
@@ -16,9 +18,15 @@ void DataTable::Select(const TupleSlot &slot, ProjectedRow *out_buffer) {
   }
 }
 
+bool DataTable::Update(const TupleSlot &slot, const ProjectedRow &redo, DeltaRecord *undo) {
+  return false;
+}
+
 TupleSlot DataTable::Insert(const ProjectedRow &redo) {
   TupleSlot result;
   accessor_.Allocate(insertion_head_, result);
+
+  StorageUtil::WriteBytes(sizeof(DeltaRecord *), 0, accessor_.AccessForceNotNull(result, VERSION_VECTOR_COLUMN_ID));
   for (uint16_t i = 0; i < redo.NumColumns(); i++) {
     StorageUtil::CopyAttrFromProjection(redo, accessor_, result, i);
   }

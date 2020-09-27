@@ -15,6 +15,9 @@ public:
 
   void Select(const TupleSlot &slot, ProjectedRow *out_buffer);
 
+  bool Update(const TupleSlot &slot, const ProjectedRow &redo,
+              DeltaRecord *undo);
+
   TupleSlot Insert(const ProjectedRow &redo);
 
 private:
