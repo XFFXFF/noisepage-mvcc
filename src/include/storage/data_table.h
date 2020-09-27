@@ -18,13 +18,15 @@ public:
   bool Update(const TupleSlot &slot, const ProjectedRow &redo,
               DeltaRecord *undo);
 
-  TupleSlot Insert(const ProjectedRow &redo);
+  TupleSlot Insert(const ProjectedRow &redo, DeltaRecord *undo);
 
 private:
   BlockStore block_store_;
   TupleAccessStrategy accessor_;
   RawBlock *insertion_head_;
   ConcurrentVector<RawBlock *> blocks_;
+
+  DeltaRecord *ReadVersionPtr(const TupleSlot &slot);
 };
 
 } // namespace noisepage::storage

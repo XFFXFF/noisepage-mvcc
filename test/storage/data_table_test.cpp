@@ -23,7 +23,11 @@ TEST_F(DataTableTests, SimpleTest) {
     memset(redo_buffer, 0, redo_size);
     auto *redo = storage::ProjectedRow::InitializeProjectedRow(redo_buffer, layout, all_col_ids);
     testutil::PopulateRandomRow(redo, layout, generator);
-    storage::TupleSlot slot = data_table.Insert(*redo);
+
+    uint32_t undo_size = storage::DeltaRecord::Size(layout, all_col_ids);
+    byte *undo_buffer = new byte[undo_size];
+    auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, 0, layout, all_col_ids);
+    storage::TupleSlot slot = data_table.Insert(*redo, undo);
 
     byte *select_buffer = new byte[redo_size];
     memset(select_buffer, 0, redo_size);
