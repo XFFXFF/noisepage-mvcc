@@ -3,6 +3,7 @@
 #include "storage/storage_defs.h"
 #include "common/test_util.h"
 #include "storage/tuple_access_strategy_test_util.h"
+#include "storage/storage_util.h"
 
 namespace noisepage
 {
@@ -59,7 +60,24 @@ std::vector<uint16_t> ProjectionListAllColumns(const storage::BlockLayout &layou
   }
   return col_ids;
 }
- 
+
+bool ProjectionListEqual(const storage::BlockLayout &layout,
+                         const storage::ProjectedRow &one,
+                         const storage::ProjectedRow &other) {
+  if (one.NumColumns() != other.NumColumns()) return false;
+  for (uint16_t i = 0; i < one.NumColumns(); i++) {
+    if (one.ColumnIds()[i] != other.ColumnIds()[i]) return false;
+  }
+
+  for (uint16_t i = 0; i < one.NumColumns(); i++) {
+    uint8_t attr_size = layout.attr_sizes_[i];
+    uint64_t one_val = storage::StorageUtil::ReadBytes(attr_size, one.AccessWithNullCheck(i));    
+    uint64_t other_val = storage::StorageUtil::ReadBytes(attr_size, other.AccessWithNullCheck(i));
+    if (one_val != other_val) return false;
+  }
+  return true;
+}
+
 } // namespace testutil
 
   
