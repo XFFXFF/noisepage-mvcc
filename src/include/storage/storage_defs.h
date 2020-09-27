@@ -62,12 +62,12 @@ public:
     assert(offset < BLOCK_SIZE);
   }
 
-  RawBlock *GetBlock() {
+  RawBlock *GetBlock() const {
     return reinterpret_cast<RawBlock *>(
         bytes_ & ~static_cast<uintptr_t>(BLOCK_SIZE - 1));
   }
 
-  uint32_t GetOffset() {
+  uint32_t GetOffset() const {
     return static_cast<uint32_t>(bytes_ &
                                  static_cast<uintptr_t>(BLOCK_SIZE - 1));
   }

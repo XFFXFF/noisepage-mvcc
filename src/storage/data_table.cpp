@@ -10,7 +10,7 @@ DataTable::DataTable(BlockStore store, BlockLayout layout) : block_store_(store)
   blocks_.PushBack(new_block);
 } 
 
-void DataTable::Select(TupleSlot &slot, ProjectedRow *out_buffer) {
+void DataTable::Select(const TupleSlot &slot, ProjectedRow *out_buffer) {
   for (uint16_t i = 0; i < out_buffer->NumColumns(); i++) {
     StorageUtil::CopyAttrIntoProjection(accessor_, slot, out_buffer, i);
   }

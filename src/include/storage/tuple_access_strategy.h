@@ -67,16 +67,16 @@ struct Block {
   uint32_t num_records_;
   byte varlen_contents_[0];
 };
-
+ 
 class TupleAccessStrategy {
 public:
   TupleAccessStrategy(const BlockLayout &layout) : layout_(layout) {}
 
-  RawConcurrentBitmap *ColumnNullBitmap(RawBlock *block, uint16_t col_id) {
+  RawConcurrentBitmap *ColumnNullBitmap(RawBlock *block, uint16_t col_id) const {
     return reinterpret_cast<Block *>(block)->Column(col_id)->NullBitmap();
   }
 
-  bool Allocate(RawBlock *block, TupleSlot &slot) {
+  bool Allocate(RawBlock *block, TupleSlot &slot) const {
     auto *null_bitmap = ColumnNullBitmap(block, 0);
     for (uint32_t i = 0; i < layout_.num_slots_; i++) {
       if (null_bitmap->Flip(i, false)) {
@@ -87,24 +87,24 @@ public:
     return false;
   }
 
-  byte *ColumnAt(TupleSlot slot, uint16_t col_id) {
+  byte *ColumnAt(TupleSlot slot, uint16_t col_id) const {
     byte *column_start = reinterpret_cast<Block *>(slot.GetBlock())->Column(col_id)->ColumnStart(layout_);
     return column_start + slot.GetOffset() * layout_.attr_sizes_[col_id];
   }
 
-  byte *AccessWithNullCheck(TupleSlot slot, uint16_t col_id) {
+  byte *AccessWithNullCheck(TupleSlot slot, uint16_t col_id) const {
     if (!ColumnNullBitmap(slot.GetBlock(), col_id)->Test(slot.GetOffset())) {
       return nullptr;
     }
     return ColumnAt(slot, col_id);
   }
 
-  byte *AccessForceNotNull(TupleSlot slot, uint16_t col_id) {
+  byte *AccessForceNotNull(TupleSlot slot, uint16_t col_id) const {
     ColumnNullBitmap(slot.GetBlock(), col_id)->Flip(slot.GetOffset(), false);
     return ColumnAt(slot, col_id);
   }
 
-  void SetNull(TupleSlot slot, uint32_t col_id) {
+  void SetNull(TupleSlot slot, uint32_t col_id) const {
     ColumnNullBitmap(slot.GetBlock(), col_id)->Flip(slot.GetOffset(), true);
   }
 

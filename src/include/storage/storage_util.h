@@ -40,8 +40,8 @@ public:
     }
   }
 
-  static void CopyAttrIntoProjection(TupleAccessStrategy &accessor,
-                                     TupleSlot &slot, 
+  static void CopyAttrIntoProjection(const TupleAccessStrategy &accessor,
+                                     const TupleSlot &slot, 
                                      ProjectedRow *to,
                                      uint16_t projection_list_offset) {
     uint16_t col_id = to->ColumnIds()[projection_list_offset];
@@ -58,7 +58,7 @@ public:
 
   static void CopyAttrFromProjection(const ProjectedRow &from,
                                      TupleAccessStrategy &accessor,
-                                     TupleSlot &slot,
+                                     const TupleSlot &slot,
                                      uint16_t projection_list_offset) {
     const byte *store_attr = from.AccessWithNullCheck(projection_list_offset);
     uint16_t col_id = from.ColumnIds()[projection_list_offset];

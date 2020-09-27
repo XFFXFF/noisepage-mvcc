@@ -13,7 +13,7 @@ public:
     }
   }
 
-  void Select(TupleSlot &slot, ProjectedRow *out_buffer);
+  void Select(const TupleSlot &slot, ProjectedRow *out_buffer);
 
   TupleSlot Insert(const ProjectedRow &redo);
 private:
