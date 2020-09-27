@@ -137,7 +137,7 @@ public:
 
   const RawConcurrentBitmap *NullBitmap() const {
     return reinterpret_cast<const RawConcurrentBitmap *>(AttrValueOffset() +
-                                                   num_cols_);
+                                                         num_cols_);
   }
 
   byte *AccessWithNullCheck(uint16_t offset) {
@@ -159,9 +159,7 @@ public:
     return reinterpret_cast<byte *>(this) + AttrValueOffset()[offset];
   }
 
-  void SetNull(uint16_t offset) {
-    NullBitmap()->Flip(offset, true);
-  }
+  void SetNull(uint16_t offset) { NullBitmap()->Flip(offset, true); }
 
 private:
   uint16_t num_cols_;

@@ -41,13 +41,12 @@ public:
   }
 
   static void CopyAttrIntoProjection(const TupleAccessStrategy &accessor,
-                                     const TupleSlot &slot, 
-                                     ProjectedRow *to,
+                                     const TupleSlot &slot, ProjectedRow *to,
                                      uint16_t projection_list_offset) {
     uint16_t col_id = to->ColumnIds()[projection_list_offset];
     uint8_t attr_size = accessor.GetBlockLayout().attr_sizes_[col_id];
     auto *store_attr = accessor.AccessWithNullCheck(slot, col_id);
-    
+
     if (store_attr == nullptr) {
       to->SetNull(projection_list_offset);
     } else {

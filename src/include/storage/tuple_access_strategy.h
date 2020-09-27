@@ -67,12 +67,13 @@ struct Block {
   uint32_t num_records_;
   byte varlen_contents_[0];
 };
- 
+
 class TupleAccessStrategy {
 public:
   TupleAccessStrategy(const BlockLayout &layout) : layout_(layout) {}
 
-  RawConcurrentBitmap *ColumnNullBitmap(RawBlock *block, uint16_t col_id) const {
+  RawConcurrentBitmap *ColumnNullBitmap(RawBlock *block,
+                                        uint16_t col_id) const {
     return reinterpret_cast<Block *>(block)->Column(col_id)->NullBitmap();
   }
 
@@ -88,7 +89,9 @@ public:
   }
 
   byte *ColumnAt(TupleSlot slot, uint16_t col_id) const {
-    byte *column_start = reinterpret_cast<Block *>(slot.GetBlock())->Column(col_id)->ColumnStart(layout_);
+    byte *column_start = reinterpret_cast<Block *>(slot.GetBlock())
+                             ->Column(col_id)
+                             ->ColumnStart(layout_);
     return column_start + slot.GetOffset() * layout_.attr_sizes_[col_id];
   }
 
@@ -109,6 +112,7 @@ public:
   }
 
   const BlockLayout &GetBlockLayout() const { return layout_; }
+
 private:
   const BlockLayout layout_;
 };

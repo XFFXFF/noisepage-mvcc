@@ -5,49 +5,10 @@
 #include <unordered_map>
 #include "storage/tuple_access_strategy.h"
 #include "gtest/gtest.h"
+#include "storage/storage_util.h"
 
-namespace noisepage
-{
-namespace testutil
-{
-uint64_t ReadByteValue(uint8_t attr_size, byte *pos) {
-  switch (attr_size) {
-  case 1:
-    return *reinterpret_cast<uint8_t *>(pos);
-    break;
-  case 2: 
-    return *reinterpret_cast<uint16_t *>(pos);
-    break;
-  case 4:
-    return *reinterpret_cast<uint32_t *>(pos);
-    break;
-  case 8:
-    return *reinterpret_cast<uint64_t *>(pos);
-  default:
-    assert(false);
-    break;
-  }
-}
-
-void WriteByteValue(uint8_t attr_size, uint64_t val, byte *pos) {
-  switch (attr_size) {
-  case 1:
-    *reinterpret_cast<uint8_t *>(pos) = static_cast<uint8_t>(val);
-    break;
-  case 2:
-    *reinterpret_cast<uint16_t *>(pos) = static_cast<uint16_t>(val);
-    break;
-  case 4:
-    *reinterpret_cast<uint32_t *>(pos) = static_cast<uint32_t>(val);
-    break;
-  case 8:
-    *reinterpret_cast<uint64_t *>(pos) = static_cast<uint64_t>(val);
-    break;
-  default:
-    assert(false);
-    break;
-  }
-}
+namespace noisepage {
+namespace testutil {
 
 template<typename Random>
 void RandomTupleContent(const storage::BlockLayout &layout, byte *contents, Random &generator) {
@@ -75,7 +36,7 @@ struct FakeRawTuple {
 
   uint64_t Attribute(uint16_t col_id) const {
     byte *pos = contents_ + attr_offsets_[col_id];
-    return ReadByteValue(layout_.attr_sizes_[col_id], pos);
+    return storage::StorageUtil::ReadBytes(layout_.attr_sizes_[col_id], pos);
   }
 
   const storage::BlockLayout layout_;
@@ -92,7 +53,7 @@ void InsertTuple(const FakeRawTuple &tuple,
   for (uint16_t i = 0; i < layout.num_cols_; i++) {
     auto *pos = tested.AccessForceNotNull(slot, i);
     uint64_t val = tuple.Attribute(i);
-    WriteByteValue(layout.attr_sizes_[i], val, pos);
+    storage::StorageUtil::WriteBytes(layout.attr_sizes_[i], val, pos);
   }
 }
 

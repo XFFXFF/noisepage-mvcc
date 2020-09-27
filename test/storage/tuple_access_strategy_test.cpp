@@ -81,7 +81,7 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
         auto val1 = tuple.second.Attribute(col_id);
         storage::TupleSlot slot(raw_block_, offset);
         byte *pos = tested.AccessWithNullCheck(slot, col_id);
-        auto val2 = testutil::ReadByteValue(layout.attr_sizes_[col_id], pos);
+        auto val2 = storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], pos);
         EXPECT_EQ(val1, val2);
       }
     }
@@ -117,7 +117,7 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
           auto val1 = tuple.second.Attribute(col_id);
           storage::TupleSlot slot(raw_block_, tuple.first);
           auto *pos = tested.AccessWithNullCheck(slot, col_id);
-          auto val2 = testutil::ReadByteValue(layout.attr_sizes_[col_id], pos);
+          auto val2 = storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], pos);
           EXPECT_EQ(val1, val2);
         }
       }
