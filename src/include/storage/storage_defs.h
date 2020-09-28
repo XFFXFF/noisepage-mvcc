@@ -73,7 +73,16 @@ public:
                                  static_cast<uintptr_t>(BLOCK_SIZE - 1));
   }
 
+  bool operator==(const TupleSlot &other) const {
+    return bytes_ == other.bytes_;
+  }
+
+  bool operator!=(const TupleSlot &other) const {
+    return bytes_ != other.bytes_;
+  }
+
 private:
+  friend struct std::hash<TupleSlot>;
   uintptr_t bytes_;
 };
 
@@ -206,3 +215,13 @@ private:
 } // namespace storage
 
 } // namespace noisepage
+
+namespace std {
+template<>
+struct hash<noisepage::storage::TupleSlot> {
+  size_t operator()(const noisepage::storage::TupleSlot &slot) const {
+    return hash<uintptr_t>()(slot.bytes_);
+  }
+};
+} // namespace std
+

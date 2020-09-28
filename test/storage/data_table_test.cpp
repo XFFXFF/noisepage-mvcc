@@ -30,6 +30,7 @@ public:
     auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, 0, layout_, all_col_ids_);
     storage::TupleSlot slot = data_table_.Insert(*redo, undo);
     
+    inserted_rows_map_[slot] = redo;
     return slot;
   }
 
@@ -39,10 +40,16 @@ public:
     data_table_.Select(slot, select_row);
     return select_row;
   }
+
+  storage::ProjectedRow *GetInsertedRow(const storage::TupleSlot &slot) {
+    assert(inserted_rows_map_.find(slot) != inserted_rows_map_.end());
+    return inserted_rows_map_[slot];
+  }
 private:
   const storage::BlockLayout layout_;
   storage::DataTable &data_table_;
   std::vector<byte *> loose_pointers_;
+  std::unordered_map<storage::TupleSlot, storage::ProjectedRow *> inserted_rows_map_;
 
   std::vector<uint16_t> all_col_ids_{testutil::ProjectionListAllColumns(layout_)};
   uint32_t redo_size_ = storage::ProjectedRow::Size(layout_, all_col_ids_);
@@ -65,6 +72,8 @@ TEST_F(DataTableTests, SimpleTest) {
     auto slot = tested.InsertRandomTuple(generator);
 
     auto *select_row = tested.SelectIntoBuffer(slot);
+
+    EXPECT_TRUE(testutil::ProjectionListEqual(layout, *select_row, *tested.GetInsertedRow(slot)));
   }
 }
 } // namespace noisepage
