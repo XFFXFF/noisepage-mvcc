@@ -5,7 +5,7 @@
 
 namespace noisepage::storage {
 
-DataTable::DataTable(BlockStore store, BlockLayout layout) : block_store_(store), accessor_(layout) {
+DataTable::DataTable(BlockStore &store, BlockLayout layout) : block_store_(store), accessor_(layout) {
   RawBlock *new_block = block_store_.Get();
   InitializeRawBlock(new_block, layout, 0);
   insertion_head_ = new_block;

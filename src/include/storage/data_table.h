@@ -6,7 +6,7 @@
 namespace noisepage::storage {
 class DataTable {
 public:
-  DataTable(BlockStore store, BlockLayout layout);
+  DataTable(BlockStore &store, BlockLayout layout);
   ~DataTable() {
     for (auto it = blocks_.Begin(); it != blocks_.End(); ++it) {
       block_store_.Release(*it);
@@ -21,7 +21,7 @@ public:
   TupleSlot Insert(const ProjectedRow &redo, DeltaRecord *undo);
 
 private:
-  BlockStore block_store_;
+  BlockStore &block_store_;
   TupleAccessStrategy accessor_;
   RawBlock *insertion_head_;
   ConcurrentVector<RawBlock *> blocks_;
