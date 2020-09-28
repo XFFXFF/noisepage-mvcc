@@ -9,6 +9,7 @@ class ProjectedRowTests : public ::testing::Test {};
 
 TEST_F(ProjectedRowTests, SimpleTest) {
   std::default_random_engine generator;
+  std::uniform_real_distribution<double> null_ratio{0.0, 1.0};
   const uint32_t max_col = 100;
   const uint32_t repeat = 10;
   for (uint32_t i = 0; i < repeat; i++) {
@@ -25,8 +26,8 @@ TEST_F(ProjectedRowTests, SimpleTest) {
       EXPECT_FALSE(redo->NullBitmap()->Test(i));
     }
 
-    testutil::PopulateRandomRow(redo, layout, generator);
-    /* testutil::PrintRow(redo, layout); */
+    testutil::PopulateRandomRow(redo, layout, null_ratio(generator), generator);
+    // testutil::PrintRow(redo, layout); 
   }
 }
 }

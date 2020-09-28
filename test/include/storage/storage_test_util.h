@@ -31,13 +31,17 @@ void FillWithRandomBytes(uint32_t num_bytes, byte *out, Random &generator) {
 }
 
 template<typename Random>
-void PopulateRandomRow(storage::ProjectedRow *row, const storage::BlockLayout layout,
-                       Random &generator) {
+void PopulateRandomRow(storage::ProjectedRow *row, const storage::BlockLayout layout, 
+                       const double null_bias, Random &generator) {
   for (uint16_t i = 0; i < row->NumColumns(); i++) {
     uint16_t col_id = row->ColumnIds()[i];
-    uint32_t num_bytes = layout.attr_sizes_[col_id];
-    byte *out = row->AccessForceNotNull(i);
-    FillWithRandomBytes(num_bytes, out, generator);
+    std::bernoulli_distribution coin(1 - null_bias);
+
+    if (coin(generator)) {
+      uint32_t num_bytes = layout.attr_sizes_[col_id];
+      byte *out = row->AccessForceNotNull(i);
+      FillWithRandomBytes(num_bytes, out, generator);
+    }
   }
 }
 
@@ -73,8 +77,19 @@ bool ProjectionListEqual(const storage::BlockLayout &layout,
   for (uint16_t i = 0; i < one.NumColumns(); i++) {
     uint16_t col_id = one.ColumnIds()[i];
     uint8_t attr_size = layout.attr_sizes_[col_id];
-    uint64_t one_val = storage::StorageUtil::ReadBytes(attr_size, one.AccessWithNullCheck(i));    
-    uint64_t other_val = storage::StorageUtil::ReadBytes(attr_size, other.AccessWithNullCheck(i));
+    auto *one_pos = one.AccessWithNullCheck(i);
+    auto *other_pos = other.AccessWithNullCheck(i);
+
+    if (one_pos == nullptr || other_pos == nullptr) {
+      if (one_pos == other_pos) {
+        continue;
+      } else {
+        return false;
+      }
+    }
+
+    uint64_t one_val = storage::StorageUtil::ReadBytes(attr_size, one_pos);    
+    uint64_t other_val = storage::StorageUtil::ReadBytes(attr_size, other_pos);
     EXPECT_EQ(one_val, other_val);
     if (one_val != other_val) return false;
   }

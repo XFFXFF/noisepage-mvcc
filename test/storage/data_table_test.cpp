@@ -7,7 +7,8 @@ namespace noisepage {
 class RandomDataTableTestObject {
 public:
   RandomDataTableTestObject(const storage::BlockLayout &layout,
-                            storage::DataTable &data_table) : layout_(layout), data_table_(data_table) {}
+                            storage::DataTable &data_table, const double null_bias) 
+                            : layout_(layout), data_table_(data_table), null_bias_(null_bias) {}
   
   ~RandomDataTableTestObject() {
     for (auto *ptr : loose_pointers_) {
@@ -22,7 +23,7 @@ public:
     loose_pointers_.push_back(redo_buffer);
     memset(redo_buffer, 0, redo_size_);
     auto *redo = storage::ProjectedRow::InitializeProjectedRow(redo_buffer, layout_, all_col_ids_);
-    testutil::PopulateRandomRow(redo, layout_, generator);
+    testutil::PopulateRandomRow(redo, layout_, null_bias_, generator);
 
     byte *undo_buffer = new byte[undo_size_];
     loose_pointers_.push_back(undo_buffer);
@@ -48,6 +49,7 @@ public:
 private:
   const storage::BlockLayout layout_;
   storage::DataTable &data_table_;
+  const double null_bias_;
   std::vector<byte *> loose_pointers_;
   std::unordered_map<storage::TupleSlot, storage::ProjectedRow *> inserted_rows_map_;
 
@@ -68,7 +70,8 @@ TEST_F(DataTableTests, SimpleTest) {
     storage::BlockStore block_store(10);
     storage::BlockLayout layout = testutil::RandomLayout(generator, max_col); 
     storage::DataTable data_table(block_store, layout);
-    RandomDataTableTestObject tested(layout, data_table);
+    std::uniform_real_distribution<double> null_ratio{0.0, 1.0};
+    RandomDataTableTestObject tested(layout, data_table, null_ratio(generator));
     std::vector<storage::TupleSlot> inserted_slots_;
     
     for (uint32_t j = 0; j < 10; j++) {
