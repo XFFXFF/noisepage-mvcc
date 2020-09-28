@@ -217,11 +217,9 @@ private:
 } // namespace noisepage
 
 namespace std {
-template<>
-struct hash<noisepage::storage::TupleSlot> {
+template <> struct hash<noisepage::storage::TupleSlot> {
   size_t operator()(const noisepage::storage::TupleSlot &slot) const {
     return hash<uintptr_t>()(slot.bytes_);
   }
 };
 } // namespace std
-

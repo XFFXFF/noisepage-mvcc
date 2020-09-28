@@ -71,9 +71,11 @@ bool ProjectionListEqual(const storage::BlockLayout &layout,
   }
 
   for (uint16_t i = 0; i < one.NumColumns(); i++) {
-    uint8_t attr_size = layout.attr_sizes_[i];
+    uint16_t col_id = one.ColumnIds()[i];
+    uint8_t attr_size = layout.attr_sizes_[col_id];
     uint64_t one_val = storage::StorageUtil::ReadBytes(attr_size, one.AccessWithNullCheck(i));    
     uint64_t other_val = storage::StorageUtil::ReadBytes(attr_size, other.AccessWithNullCheck(i));
+    EXPECT_EQ(one_val, other_val);
     if (one_val != other_val) return false;
   }
   return true;

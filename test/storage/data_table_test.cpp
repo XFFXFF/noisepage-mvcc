@@ -61,7 +61,7 @@ class DataTableTests : public ::testing::Test {};
 
 TEST_F(DataTableTests, SimpleTest) {
   const uint32_t max_col = 100;
-  const uint32_t repeat = 2;
+  const uint32_t repeat = 10;
   std::default_random_engine generator;
 
   for (uint32_t i = 0; i < repeat; i++) {
@@ -69,11 +69,19 @@ TEST_F(DataTableTests, SimpleTest) {
     storage::BlockLayout layout = testutil::RandomLayout(generator, max_col); 
     storage::DataTable data_table(block_store, layout);
     RandomDataTableTestObject tested(layout, data_table);
-    auto slot = tested.InsertRandomTuple(generator);
+    std::vector<storage::TupleSlot> inserted_slots_;
+    
+    for (uint32_t j = 0; j < 10; j++) {
+      auto slot = tested.InsertRandomTuple(generator);
+      inserted_slots_.push_back(slot);
+    }
 
-    auto *select_row = tested.SelectIntoBuffer(slot);
+    for (auto slot : inserted_slots_) {
+      auto *select_row = tested.SelectIntoBuffer(slot);
+      EXPECT_TRUE(testutil::ProjectionListEqual(layout, *select_row, 
+                                                *tested.GetInsertedRow(slot)));
+    }
 
-    EXPECT_TRUE(testutil::ProjectionListEqual(layout, *select_row, *tested.GetInsertedRow(slot)));
   }
 }
 } // namespace noisepage
