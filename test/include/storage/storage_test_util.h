@@ -66,6 +66,21 @@ std::vector<uint16_t> ProjectionListAllColumns(const storage::BlockLayout &layou
   return col_ids;
 }
 
+template<typename Random>
+std::vector<uint16_t> ProjectionListRandomColumns(const storage::BlockLayout &layout, Random &generator) {
+  uint16_t num_cols = 
+      std::uniform_int_distribution<uint16_t>(1, static_cast<uint16_t>(layout.num_cols_ - 1))(generator);
+  std::vector<uint16_t> col_ids; 
+  for (uint16_t col_id = 1; col_id < layout.num_cols_; col_id++) {
+    col_ids.push_back(col_id);
+  }
+
+  std::shuffle(col_ids.begin(), col_ids.end(), generator);
+
+  col_ids.resize(num_cols);
+  return col_ids;
+}
+
 bool ProjectionListEqual(const storage::BlockLayout &layout,
                          const storage::ProjectedRow &one,
                          const storage::ProjectedRow &other) {

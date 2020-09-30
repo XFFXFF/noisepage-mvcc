@@ -36,6 +36,24 @@ public:
     return slot;
   }
 
+  template<typename Random>
+  bool RandomUpdateTuple(const timestamp_t timestamp, const storage::TupleSlot &slot, Random &generator) {
+    std::vector<uint16_t> update_col_ids = testutil::ProjectionListRandomColumns(layout_, generator);
+    uint32_t update_size = storage::ProjectedRow::Size(layout_, update_col_ids);
+    byte *update_buffer = new byte[update_size];
+    loose_pointers_.push_back(update_buffer);
+    memset(update_buffer, 0, update_size);
+    auto *update = storage::ProjectedRow::InitializeProjectedRow(update_buffer, layout_, update_col_ids);
+    testutil::PopulateRandomRow(update, layout_, null_bias_, generator);
+
+    byte *undo_buffer = new byte[storage::DeltaRecord::Size(layout_, update_col_ids)];
+    loose_pointers_.push_back(undo_buffer);
+    memset(undo_buffer, 0, update_size);
+    auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, timestamp, layout_, update_col_ids);
+
+    return data_table_.Update(slot, *update, undo);
+  }
+
   storage::ProjectedRow *SelectIntoBuffer(const storage::TupleSlot &slot) {
     memset(select_buffer_, 0, redo_size_);
     auto *select_row = storage::ProjectedRow::InitializeProjectedRow(select_buffer_, layout_, all_col_ids_);
@@ -70,7 +88,7 @@ struct DataTableTests : public ::testing::Test {
   std::uniform_real_distribution<double> null_ratio_{0.0, 1.0};
 };
 
-TEST_F(DataTableTests, SimpleTest) {
+TEST_F(DataTableTests, SimpleInsertSelect) {
   const uint32_t repeat = 10;
   const uint32_t max_col = 100;
 
@@ -88,7 +106,20 @@ TEST_F(DataTableTests, SimpleTest) {
       EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row, 
                                                 *tested.GetInsertedRow(slot)));
     }
-
   }
 }
+
+TEST_F(DataTableTests, SimpleVersionChain) {
+  const uint32_t repeat = 10;
+  const uint32_t max_col = 100;
+
+  for (uint32_t i = 0; i < repeat; i++) {
+    RandomDataTableTestObject tested(block_store_, max_col, null_ratio_(generator_), generator_);
+
+    auto slot = tested.InsertRandomTuple(generator_);
+
+    EXPECT_TRUE(tested.RandomUpdateTuple(timestamp_t(0), slot, generator_));
+  }
+}
+
 } // namespace noisepage

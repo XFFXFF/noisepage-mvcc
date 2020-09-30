@@ -32,7 +32,7 @@ bool DataTable::Update(const TupleSlot &slot, const ProjectedRow &redo, DeltaRec
   for (uint16_t i = 0; i < redo.NumColumns(); i++) {
     StorageUtil::CopyAttrFromProjection(redo, accessor_, slot, i);
   }
-  return false;
+  return true;
 }
 
 TupleSlot DataTable::Insert(const ProjectedRow &redo, DeltaRecord *undo) {
