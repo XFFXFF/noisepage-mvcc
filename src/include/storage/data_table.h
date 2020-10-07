@@ -13,7 +13,7 @@ public:
     }
   }
 
-  void Select(const TupleSlot &slot, ProjectedRow *out_buffer);
+  void Select(timestamp_t timestamp, const TupleSlot &slot, ProjectedRow *out_buffer);
 
   bool Update(const TupleSlot &slot, const ProjectedRow &redo,
               DeltaRecord *undo);

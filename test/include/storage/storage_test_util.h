@@ -51,7 +51,7 @@ void PrintRow(storage::ProjectedRow *row, const storage::BlockLayout &layout) {
     byte *out = row->AccessWithNullCheck(i);
     if (out) {
       printf("col_id: %u is %lx \n", col_id, 
-            storage::StorageUtil::ReadBytes(layout.attr_sizes_[i], out));
+            storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], out));
     } else {
       printf("col_id: %u is NULL\n", col_id);
     }

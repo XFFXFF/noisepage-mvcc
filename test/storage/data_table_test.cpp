@@ -70,10 +70,10 @@ public:
     return result;
   }
 
-  storage::ProjectedRow *SelectIntoBuffer(const storage::TupleSlot &slot) {
+  storage::ProjectedRow *SelectIntoBuffer(const storage::TupleSlot &slot, timestamp_t timestamp) {
     memset(select_buffer_, 0, redo_size_);
     auto *select_row = storage::ProjectedRow::InitializeProjectedRow(select_buffer_, layout_, all_col_ids_);
-    data_table_.Select(slot, select_row);
+    data_table_.Select(timestamp, slot, select_row);
     return select_row;
   }
 
@@ -125,7 +125,7 @@ TEST_F(DataTableTests, SimpleInsertSelect) {
     }
 
     for (auto slot : inserted_slots_) {
-      auto *select_row = tested.SelectIntoBuffer(slot);
+      auto *select_row = tested.SelectIntoBuffer(slot, 0);
       EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row, 
                                                 *tested.GetInsertedRow(slot, 0)));
     }
@@ -133,7 +133,7 @@ TEST_F(DataTableTests, SimpleInsertSelect) {
 }
 
 TEST_F(DataTableTests, SimpleVersionChain) {
-  const uint32_t repeat = 10;
+  const uint32_t repeat = 1;
   const uint32_t max_col = 100;
 
   for (uint32_t i = 0; i < repeat; i++) {
@@ -143,7 +143,9 @@ TEST_F(DataTableTests, SimpleVersionChain) {
 
     EXPECT_TRUE(tested.RandomUpdateTuple(timestamp_t(0), slot, generator_));
 
-    // testutil::PrintRow(tested.GetInsertedRow(slot, 0), tested.Layout());
+    auto *select_row = tested.SelectIntoBuffer(slot, 0);
+    EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row,
+                                              *tested.GetInsertedRow(slot, 0)));
   }
 }
 
