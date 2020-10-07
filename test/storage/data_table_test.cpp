@@ -133,7 +133,7 @@ TEST_F(DataTableTests, SimpleInsertSelect) {
 }
 
 TEST_F(DataTableTests, SimpleVersionChain) {
-  const uint32_t repeat = 1;
+  const uint32_t repeat = 10;
   const uint32_t max_col = 100;
 
   for (uint32_t i = 0; i < repeat; i++) {
@@ -141,11 +141,12 @@ TEST_F(DataTableTests, SimpleVersionChain) {
 
     auto slot = tested.InsertRandomTuple(generator_);
 
-    EXPECT_TRUE(tested.RandomUpdateTuple(timestamp_t(0), slot, generator_));
+    EXPECT_TRUE(tested.RandomUpdateTuple(timestamp_t(1), slot, generator_));
 
     auto *select_row = tested.SelectIntoBuffer(slot, 0);
     EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row,
                                               *tested.GetInsertedRow(slot, 0)));
+
   }
 }
 
