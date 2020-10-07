@@ -32,7 +32,7 @@ public:
     auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, 0, layout_, all_col_ids_);
     storage::TupleSlot slot = data_table_.Insert(*redo, undo);
     
-    inserted_rows_map_[slot] = redo;
+    tuple_versions_[slot].emplace_back(0, redo);
     return slot;
   }
 
@@ -62,8 +62,8 @@ public:
   }
 
   storage::ProjectedRow *GetInsertedRow(const storage::TupleSlot &slot) {
-    assert(inserted_rows_map_.find(slot) != inserted_rows_map_.end());
-    return inserted_rows_map_[slot];
+    assert(tuple_versions_.find(slot) != tuple_versions_.end());
+    return tuple_versions_[slot].front().second;
   }
 
   const storage::BlockLayout &Layout() const {
@@ -74,7 +74,8 @@ private:
   storage::DataTable data_table_;
   const double null_bias_;
   std::vector<byte *> loose_pointers_;
-  std::unordered_map<storage::TupleSlot, storage::ProjectedRow *> inserted_rows_map_;
+  using tuple_version = std::pair<timestamp_t, storage::ProjectedRow *>;
+  std::unordered_map<storage::TupleSlot, std::vector<tuple_version>> tuple_versions_;
 
   std::vector<uint16_t> all_col_ids_{testutil::ProjectionListAllColumns(layout_)};
   uint32_t redo_size_ = storage::ProjectedRow::Size(layout_, all_col_ids_);
