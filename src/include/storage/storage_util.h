@@ -1,6 +1,7 @@
 #pragma once
 #include "storage/tuple_access_strategy.h"
 #include <iostream>
+#include <unordered_map>
 
 namespace noisepage::storage {
 class StorageUtil {
@@ -67,6 +68,23 @@ public:
     } else {
       auto *dest = accessor.AccessForceNotNull(slot, col_id);
       WriteBytes(attr_size, ReadBytes(attr_size, store_attr), dest);
+    }
+  }
+
+  static void ApplyDelta(const BlockLayout &layout, const ProjectedRow &delta, 
+                         ProjectedRow *buffer, const std::unordered_map<uint16_t, uint16_t> &id_to_offset) {
+    for (uint16_t i = 0; i < delta.NumColumns(); i++) {
+      const byte *delta_attr = delta.AccessWithNullCheck(i);
+      uint16_t col_id = delta.ColumnIds()[i];
+      auto it = id_to_offset.find(col_id);
+      assert(it != id_to_offset.end());
+      if (delta_attr == nullptr) {
+        buffer->SetNull(it->second);
+      } else {
+        uint8_t attr_size = layout.attr_sizes_[col_id];
+        auto *dest = buffer->AccessForceNotNull(it->second);
+        WriteBytes(attr_size, ReadBytes(attr_size, delta_attr), dest);
+      }
     }
   }
 };

@@ -41,7 +41,6 @@ public:
     std::vector<uint16_t> update_col_ids = testutil::ProjectionListRandomColumns(layout_, generator);
     uint32_t update_size = storage::ProjectedRow::Size(layout_, update_col_ids);
     byte *update_buffer = new byte[update_size];
-    loose_pointers_.push_back(update_buffer);
     memset(update_buffer, 0, update_size);
     auto *update = storage::ProjectedRow::InitializeProjectedRow(update_buffer, layout_, update_col_ids);
     testutil::PopulateRandomRow(update, layout_, null_bias_, generator);
@@ -51,7 +50,24 @@ public:
     memset(undo_buffer, 0, update_size);
     auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, timestamp, layout_, update_col_ids);
 
-    return data_table_.Update(slot, *update, undo);
+    bool result = data_table_.Update(slot, *update, undo);
+    if (result) {
+      byte *version_buffer = new byte[redo_size_];
+      loose_pointers_.push_back(version_buffer);
+      memset(version_buffer, 0, redo_size_);
+      memcpy(version_buffer, tuple_versions_[slot].back().second, redo_size_);
+      auto *version = reinterpret_cast<storage::ProjectedRow *>(version_buffer);
+
+      std::unordered_map<uint16_t, uint16_t> id_to_offset;
+      for (auto i = 0; i < version->NumColumns(); i++) {
+        id_to_offset[version->ColumnIds()[i]] = i;
+      }
+
+      storage::StorageUtil::ApplyDelta(layout_, *update, version, id_to_offset);
+      tuple_versions_[slot].emplace_back(timestamp, version);
+    }
+    delete[] update_buffer;
+    return result;
   }
 
   storage::ProjectedRow *SelectIntoBuffer(const storage::TupleSlot &slot) {
@@ -61,9 +77,15 @@ public:
     return select_row;
   }
 
-  storage::ProjectedRow *GetInsertedRow(const storage::TupleSlot &slot) {
+  storage::ProjectedRow *GetInsertedRow(const storage::TupleSlot &slot, timestamp_t timestamp) {
     assert(tuple_versions_.find(slot) != tuple_versions_.end());
-    return tuple_versions_[slot].front().second;
+    auto &versions = tuple_versions_[slot];
+    for (auto i = static_cast<int64_t>(versions.size()-1); i >= 0; i--) {
+      if (timestamp >= versions[i].first) {
+        return versions[i].second;
+      }
+    }
+    return nullptr;
   }
 
   const storage::BlockLayout &Layout() const {
@@ -105,7 +127,7 @@ TEST_F(DataTableTests, SimpleInsertSelect) {
     for (auto slot : inserted_slots_) {
       auto *select_row = tested.SelectIntoBuffer(slot);
       EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row, 
-                                                *tested.GetInsertedRow(slot)));
+                                                *tested.GetInsertedRow(slot, 0)));
     }
   }
 }
@@ -120,6 +142,8 @@ TEST_F(DataTableTests, SimpleVersionChain) {
     auto slot = tested.InsertRandomTuple(generator_);
 
     EXPECT_TRUE(tested.RandomUpdateTuple(timestamp_t(0), slot, generator_));
+
+    // testutil::PrintRow(tested.GetInsertedRow(slot, 0), tested.Layout());
   }
 }
 
