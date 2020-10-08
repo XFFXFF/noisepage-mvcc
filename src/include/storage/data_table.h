@@ -27,6 +27,12 @@ private:
   ConcurrentVector<RawBlock *> blocks_;
 
   DeltaRecord *ReadVersionPtr(const TupleSlot &slot);
+
+  bool HasConflict(DeltaRecord *version_ptr, DeltaRecord *undo) {      
+    return version_ptr != nullptr
+           && version_ptr->timestamp_ != undo->timestamp_
+           && static_cast<int64_t>(version_ptr->timestamp_) < 0;
+  }
 };
 
 } // namespace noisepage::storage

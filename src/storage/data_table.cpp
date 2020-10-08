@@ -42,6 +42,8 @@ bool DataTable::Update(const TupleSlot &slot, const ProjectedRow &redo, DeltaRec
 
   undo->next_ = version_ptr;
 
+  if (HasConflict(version_ptr, undo)) return false;
+
   for (uint16_t i = 0; i < redo.NumColumns(); i++) {
     StorageUtil::CopyAttrIntoProjection(accessor_, slot, undo->Delta(), i);
   }

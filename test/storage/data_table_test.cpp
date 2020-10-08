@@ -155,4 +155,20 @@ TEST_F(DataTableTests, SimpleVersionChain) {
   }
 }
 
+TEST_F(DataTableTests, WriteWriteConfilictUpdateFails) {
+  const uint32_t repeat = 100;
+  const uint32_t max_col = 100;
+  for (uint32_t i = 0; i < repeat; i++) {
+    RandomDataTableTestObject tested(block_store_, max_col, null_ratio_(generator_), generator_);
+
+    auto slot = tested.InsertRandomTuple(generator_);
+    EXPECT_TRUE(tested.RandomUpdateTuple(timestamp_t(UINT64_MAX), slot, generator_));
+    EXPECT_FALSE(tested.RandomUpdateTuple(timestamp_t(1), slot, generator_));
+
+    auto *select_row = tested.SelectIntoBuffer(slot, timestamp_t(UINT64_MAX));
+    EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row,
+                                              *tested.GetInsertedRow(slot, timestamp_t(UINT64_MAX))));
+  }
+}
+
 } // namespace noisepage
