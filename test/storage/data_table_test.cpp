@@ -135,18 +135,23 @@ TEST_F(DataTableTests, SimpleInsertSelect) {
 TEST_F(DataTableTests, SimpleVersionChain) {
   const uint32_t repeat = 10;
   const uint32_t max_col = 100;
+  const uint32_t num_updates = 10;
 
   for (uint32_t i = 0; i < repeat; i++) {
     RandomDataTableTestObject tested(block_store_, max_col, null_ratio_(generator_), generator_);
 
     auto slot = tested.InsertRandomTuple(generator_);
 
-    EXPECT_TRUE(tested.RandomUpdateTuple(timestamp_t(1), slot, generator_));
+    timestamp_t timestamp(0);
+    for (uint32_t j = 0; j < num_updates; j++) {
+      EXPECT_TRUE(tested.RandomUpdateTuple(timestamp++, slot, generator_));
+    }
 
-    auto *select_row = tested.SelectIntoBuffer(slot, 0);
-    EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row,
-                                              *tested.GetInsertedRow(slot, 0)));
-
+    for (uint32_t j = 0; j < num_updates; j++) {
+      auto *select_row = tested.SelectIntoBuffer(slot, j);
+      EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row,
+                                                *tested.GetInsertedRow(slot, j)));
+    }
   }
 }
 
