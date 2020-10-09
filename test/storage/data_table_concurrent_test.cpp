@@ -7,9 +7,11 @@ namespace noisepage {
 class FakeTransaction {
 public:
   template<typename Random>
-  FakeTransaction(storage::BlockStore &store, uint32_t max_col, double null_bias, Random &generator) 
-                            : layout_(testutil::RandomLayout(generator, max_col)), 
-                              data_table_(store, layout_), null_bias_(null_bias) {}
+  FakeTransaction(storage::BlockStore &store, uint32_t max_col, double null_bias,
+                  timestamp_t start_time, timestamp_t txn_id, Random &generator) 
+                  : layout_(testutil::RandomLayout(generator, max_col)), 
+                    data_table_(store, layout_), null_bias_(null_bias), 
+                    start_time_(start_time), txn_id_(txn_id) {}
   
   ~FakeTransaction() {
     for (auto *ptr : loose_pointers_) {
@@ -32,7 +34,7 @@ public:
     auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, 0, layout_, all_col_ids_);
     storage::TupleSlot slot = data_table_.Insert(*redo, undo);
     
-    tuple_versions_[slot].emplace_back(0, redo);
+    reference_tuples.emplace(slot, redo);
     return slot;
   }
 
@@ -51,21 +53,6 @@ public:
     auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, timestamp, layout_, update_col_ids);
 
     bool result = data_table_.Update(slot, *update, undo);
-    if (result) {
-      byte *version_buffer = new byte[redo_size_];
-      loose_pointers_.push_back(version_buffer);
-      memset(version_buffer, 0, redo_size_);
-      memcpy(version_buffer, tuple_versions_[slot].back().second, redo_size_);
-      auto *version = reinterpret_cast<storage::ProjectedRow *>(version_buffer);
-
-      std::unordered_map<uint16_t, uint16_t> id_to_offset;
-      for (auto i = 0; i < version->NumColumns(); i++) {
-        id_to_offset[version->ColumnIds()[i]] = i;
-      }
-
-      storage::StorageUtil::ApplyDelta(layout_, *update, version, id_to_offset);
-      tuple_versions_[slot].emplace_back(timestamp, version);
-    }
     delete[] update_buffer;
     return result;
   }
@@ -77,15 +64,9 @@ public:
     return select_row;
   }
 
-  storage::ProjectedRow *GetInsertedRow(const storage::TupleSlot &slot, timestamp_t timestamp) {
-    assert(tuple_versions_.find(slot) != tuple_versions_.end());
-    auto &versions = tuple_versions_[slot];
-    for (auto i = static_cast<int64_t>(versions.size()-1); i >= 0; i--) {
-      if (timestamp >= versions[i].first) {
-        return versions[i].second;
-      }
-    }
-    return nullptr;
+  storage::ProjectedRow *GetInsertedRow(const storage::TupleSlot &slot) {
+    assert(reference_tuples.find(slot) != reference_tuples.end());
+    return reference_tuples[slot];
   }
 
   const storage::BlockLayout &Layout() const {
@@ -95,9 +76,10 @@ private:
   const storage::BlockLayout layout_;
   storage::DataTable data_table_;
   const double null_bias_;
+  timestamp_t start_time_, txn_id_;
+
   std::vector<byte *> loose_pointers_;
-  using tuple_version = std::pair<timestamp_t, storage::ProjectedRow *>;
-  std::unordered_map<storage::TupleSlot, std::vector<tuple_version>> tuple_versions_;
+  std::unordered_map<storage::TupleSlot, storage::ProjectedRow *> reference_tuples;
 
   std::vector<uint16_t> all_col_ids_{testutil::ProjectionListAllColumns(layout_)};
   uint32_t redo_size_ = storage::ProjectedRow::Size(layout_, all_col_ids_);
@@ -116,7 +98,8 @@ TEST_F(DataTableConcurrentTests, SimpleInsertSelect) {
   const uint32_t max_col = 100;
 
   for (uint32_t i = 0; i < repeat; i++) {
-    FakeTransaction tested(block_store_, max_col, null_ratio_(generator_), generator_);
+    FakeTransaction tested(block_store_, max_col, null_ratio_(generator_),
+                           timestamp_t(0), timestamp_t(0), generator_);
     std::vector<storage::TupleSlot> inserted_slots_;
     
     for (uint32_t j = 0; j < 10; j++) {
@@ -127,7 +110,7 @@ TEST_F(DataTableConcurrentTests, SimpleInsertSelect) {
     for (auto slot : inserted_slots_) {
       auto *select_row = tested.SelectIntoBuffer(slot, 0);
       EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row, 
-                                                *tested.GetInsertedRow(slot, 0)));
+                                                *tested.GetInsertedRow(slot)));
     }
   }
 }
