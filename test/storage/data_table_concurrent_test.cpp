@@ -34,6 +34,7 @@ public:
     auto *undo = storage::DeltaRecord::InitializeDeltaRecord(undo_buffer, 0, layout_, all_col_ids_);
     storage::TupleSlot slot = data_table_.Insert(*redo, undo);
     
+    inserted_slots_.push_back(slot);
     reference_tuples.emplace(slot, redo);
     return slot;
   }
@@ -69,6 +70,10 @@ public:
     return reference_tuples[slot];
   }
 
+  std::vector<storage::TupleSlot> InsertedSlots() const {
+    return inserted_slots_;
+  }
+
   const storage::BlockLayout &Layout() const {
     return layout_;
   }
@@ -79,6 +84,7 @@ private:
   timestamp_t start_time_, txn_id_;
 
   std::vector<byte *> loose_pointers_;
+  std::vector<storage::TupleSlot> inserted_slots_;
   std::unordered_map<storage::TupleSlot, storage::ProjectedRow *> reference_tuples;
 
   std::vector<uint16_t> all_col_ids_{testutil::ProjectionListAllColumns(layout_)};
@@ -93,24 +99,33 @@ struct DataTableConcurrentTests : public ::testing::Test {
   std::uniform_real_distribution<double> null_ratio_{0.0, 1.0};
 };
 
-TEST_F(DataTableConcurrentTests, SimpleInsertSelect) {
+TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
   const uint32_t repeat = 10;
   const uint32_t max_col = 100;
+  const uint32_t num_threads = 8;
+  const uint32_t num_inserts = 10000;
 
   for (uint32_t i = 0; i < repeat; i++) {
-    FakeTransaction tested(block_store_, max_col, null_ratio_(generator_),
-                           timestamp_t(0), timestamp_t(0), generator_);
-    std::vector<storage::TupleSlot> inserted_slots_;
-    
-    for (uint32_t j = 0; j < 10; j++) {
-      auto slot = tested.InsertRandomTuple(generator_);
-      inserted_slots_.push_back(slot);
+    std::vector<FakeTransaction> fake_txns;
+    for (uint32_t j = 0; j < num_threads; j++) {
+      fake_txns.emplace_back(block_store_, max_col, null_ratio_(generator_), 
+                             timestamp_t(0), timestamp_t(0), generator_);
     }
 
-    for (auto slot : inserted_slots_) {
-      auto *select_row = tested.SelectIntoBuffer(slot, 0);
-      EXPECT_TRUE(testutil::ProjectionListEqual(tested.Layout(), *select_row, 
-                                                *tested.GetInsertedRow(slot)));
+    auto workload = [&](uint32_t id) {
+      std::default_random_engine thread_generator(id);
+      for (uint32_t j = 0; j < num_inserts / num_threads; j++) {
+        auto slot = fake_txns[id].InsertRandomTuple(thread_generator);
+      }
+    };
+    testutil::RunThreadUntilFinish(num_threads, workload);
+    
+    for (auto &fake_txn : fake_txns) {
+      for (auto slot : fake_txn.InsertedSlots()) {
+        auto *selected_row = fake_txn.SelectIntoBuffer(slot, timestamp_t(1));
+        EXPECT_TRUE(testutil::ProjectionListEqual(fake_txn.Layout(), *selected_row, 
+                                                  *fake_txn.GetInsertedRow(slot)));
+      }
     }
   }
 }
