@@ -6,10 +6,7 @@
 namespace noisepage::storage {
 
 DataTable::DataTable(BlockStore &store, BlockLayout layout) : block_store_(store), accessor_(layout) {
-  RawBlock *new_block = block_store_.Get();
-  InitializeRawBlock(new_block, layout, 0);
-  insertion_head_ = new_block;
-  blocks_.PushBack(new_block);
+  NewBlock();
 } 
 
 void DataTable::Select(timestamp_t timestamp, const TupleSlot &slot, ProjectedRow *out_buffer) {
@@ -60,10 +57,7 @@ bool DataTable::Update(const TupleSlot &slot, const ProjectedRow &redo, DeltaRec
 TupleSlot DataTable::Insert(const ProjectedRow &redo, DeltaRecord *undo) {
   TupleSlot result;
   while (!accessor_.Allocate(insertion_head_, result)) {
-    RawBlock *new_block = block_store_.Get();
-    InitializeRawBlock(new_block, accessor_.GetBlockLayout(), 0);
-    insertion_head_ = new_block;
-    blocks_.PushBack(new_block);
+    NewBlock();
   }
 
   StorageUtil::WriteBytes(sizeof(DeltaRecord *), 0, accessor_.AccessForceNotNull(result, VERSION_VECTOR_COLUMN_ID));

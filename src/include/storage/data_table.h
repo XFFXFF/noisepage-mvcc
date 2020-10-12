@@ -33,6 +33,13 @@ private:
            && version_ptr->timestamp_ != undo->timestamp_
            && static_cast<int64_t>(version_ptr->timestamp_) < 0;
   }
+
+  void NewBlock() {
+    RawBlock *new_block = block_store_.Get();
+    InitializeRawBlock(new_block, accessor_.GetBlockLayout(), 0);
+    insertion_head_ = new_block;
+    blocks_.PushBack(new_block);
+  }
 };
 
 } // namespace noisepage::storage
