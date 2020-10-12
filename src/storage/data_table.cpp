@@ -59,7 +59,12 @@ bool DataTable::Update(const TupleSlot &slot, const ProjectedRow &redo, DeltaRec
 
 TupleSlot DataTable::Insert(const ProjectedRow &redo, DeltaRecord *undo) {
   TupleSlot result;
-  accessor_.Allocate(insertion_head_, result);
+  while (!accessor_.Allocate(insertion_head_, result)) {
+    RawBlock *new_block = block_store_.Get();
+    InitializeRawBlock(new_block, accessor_.GetBlockLayout(), 0);
+    insertion_head_ = new_block;
+    blocks_.PushBack(new_block);
+  }
 
   StorageUtil::WriteBytes(sizeof(DeltaRecord *), 0, accessor_.AccessForceNotNull(result, VERSION_VECTOR_COLUMN_ID));
   Update(result, redo, undo);

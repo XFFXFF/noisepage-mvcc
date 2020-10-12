@@ -103,7 +103,7 @@ TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
   const uint32_t repeat = 1;
   const uint32_t max_col = 100;
   const uint32_t num_threads = 1;
-  const uint32_t num_inserts = 3300;
+  const uint32_t num_inserts = 10000;
 
   for (uint32_t i = 0; i < repeat; i++) {
     std::vector<FakeTransaction> fake_txns;
