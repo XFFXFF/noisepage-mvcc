@@ -16,7 +16,7 @@ void InitializeRawBlock(RawBlock *raw,
   uint32_t attr_offset = layout.header_size_;
   for (auto i = 0; i < layout.num_cols_; i++) {
     block->AttrOffsets()[i] = attr_offset;
-    attr_offset += layout.attr_sizes_[i] * layout.num_slots_;
+    attr_offset += layout.attr_sizes_[i] * layout.num_slots_ + BitmapSize(layout.num_slots_);
   }
 
   block->NumAttrs(layout) = layout.num_cols_;
