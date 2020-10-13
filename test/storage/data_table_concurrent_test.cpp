@@ -7,10 +7,10 @@ namespace noisepage {
 class FakeTransaction {
 public:
   template<typename Random>
-  FakeTransaction(storage::BlockStore &store, uint32_t max_col, double null_bias,
+  FakeTransaction(const storage::BlockLayout &layout, storage::DataTable &data_table, const double null_bias,
                   timestamp_t start_time, timestamp_t txn_id, Random &generator) 
-                  : layout_(testutil::RandomLayout(generator, max_col)), 
-                    data_table_(store, layout_), null_bias_(null_bias), 
+                  : layout_(layout), 
+                    data_table_(data_table), null_bias_(null_bias), 
                     start_time_(start_time), txn_id_(txn_id) {}
   
   ~FakeTransaction() {
@@ -78,8 +78,8 @@ public:
     return layout_;
   }
 private:
-  const storage::BlockLayout layout_;
-  storage::DataTable data_table_;
+  const storage::BlockLayout &layout_;
+  storage::DataTable &data_table_;
   const double null_bias_;
   timestamp_t start_time_, txn_id_;
 
@@ -105,10 +105,13 @@ TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
   const uint32_t num_threads = 1;
   const uint32_t num_inserts = 10000;
 
+  storage::BlockLayout layout = testutil::RandomLayout(generator_, max_col);
+  storage::DataTable table(block_store_, layout);
+  
   for (uint32_t i = 0; i < repeat; i++) {
     std::vector<FakeTransaction> fake_txns;
     for (uint32_t j = 0; j < num_threads; j++) {
-      fake_txns.emplace_back(block_store_, max_col, null_ratio_(generator_), 
+      fake_txns.emplace_back(layout, table, null_ratio_(generator_), 
                              timestamp_t(0), timestamp_t(0), generator_);
     }
 
