@@ -147,7 +147,8 @@ TEST_F(DataTableConcurrentTests, ConcurrentUpdateOneWriterWins) {
     auto slot = insert_txn.InsertRandomTuple(generator_);
 
     std::vector<FakeTransaction> fake_txns;
-    for (uint32_t thread = 0; thread < num_threads; thread++) {
+    fake_txns.reserve(num_threads);
+    for (uint64_t thread = 0; thread < num_threads; thread++) {
       fake_txns.emplace_back(layout, table, null_ratio_(generator_), timestamp_t(0), timestamp_t(-thread-1), generator_);
     }
     
