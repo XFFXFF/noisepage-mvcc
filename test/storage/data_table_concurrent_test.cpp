@@ -8,10 +8,9 @@ class FakeTransaction {
 public:
   template<typename Random>
   FakeTransaction(const storage::BlockLayout &layout, storage::DataTable &data_table, const double null_bias,
-                  timestamp_t start_time, timestamp_t txn_id, Random &generator) 
-                  : layout_(layout), 
-                    data_table_(data_table), null_bias_(null_bias), 
-                    start_time_(start_time), txn_id_(txn_id) {}
+                  timestamp_t txn_id, Random &generator) 
+                  : layout_(layout), data_table_(data_table), null_bias_(null_bias), 
+                    txn_id_(txn_id) {}
   
   ~FakeTransaction() {
     for (auto *ptr : loose_pointers_) {
@@ -81,7 +80,7 @@ private:
   const storage::BlockLayout &layout_;
   storage::DataTable &data_table_;
   const double null_bias_;
-  timestamp_t start_time_, txn_id_;
+  timestamp_t txn_id_;
 
   std::vector<byte *> loose_pointers_;
   std::vector<storage::TupleSlot> inserted_slots_;
@@ -113,7 +112,7 @@ TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
     fake_txns.reserve(num_threads);
     for (uint32_t j = 0; j < num_threads; j++) {
       fake_txns.emplace_back(layout, table, null_ratio_(generator_), 
-                             timestamp_t(0), timestamp_t(0), generator_);
+                             timestamp_t(0), generator_);
     }
 
     auto workload = [&](uint32_t id) {
@@ -143,13 +142,13 @@ TEST_F(DataTableConcurrentTests, ConcurrentUpdateOneWriterWins) {
     storage::BlockLayout layout = testutil::RandomLayout(generator_, max_col);
     storage::DataTable table(block_store_, layout);
 
-    FakeTransaction insert_txn(layout, table, null_ratio_(generator_), timestamp_t(0), timestamp_t(0), generator_);
+    FakeTransaction insert_txn(layout, table, null_ratio_(generator_), timestamp_t(0), generator_);
     auto slot = insert_txn.InsertRandomTuple(generator_);
 
     std::vector<FakeTransaction> fake_txns;
     fake_txns.reserve(num_threads);
     for (uint64_t thread = 0; thread < num_threads; thread++) {
-      fake_txns.emplace_back(layout, table, null_ratio_(generator_), timestamp_t(0), timestamp_t(-thread-1), generator_);
+      fake_txns.emplace_back(layout, table, null_ratio_(generator_), timestamp_t(-thread-1), generator_);
     }
     
     std::atomic<uint32_t> success = 0, fail = 0;
