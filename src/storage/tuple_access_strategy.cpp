@@ -1,12 +1,9 @@
-#include "storage/storage_defs.h"
 #include "storage/tuple_access_strategy.h"
+#include "storage/storage_defs.h"
 
-namespace noisepage
-{
-namespace storage
-{
-void InitializeRawBlock(RawBlock *raw,
-                        const BlockLayout &layout,
+namespace noisepage {
+namespace storage {
+void InitializeRawBlock(RawBlock *raw, const BlockLayout &layout,
                         uint32_t block_id) {
   auto *block = reinterpret_cast<Block *>(raw);
   block->block_id_ = block_id;
@@ -16,7 +13,8 @@ void InitializeRawBlock(RawBlock *raw,
   uint32_t attr_offset = layout.header_size_;
   for (auto i = 0; i < layout.num_cols_; i++) {
     block->AttrOffsets()[i] = attr_offset;
-    attr_offset += layout.attr_sizes_[i] * layout.num_slots_ + BitmapSize(layout.num_slots_);
+    attr_offset += layout.attr_sizes_[i] * layout.num_slots_ +
+                   BitmapSize(layout.num_slots_);
   }
 
   block->NumAttrs(layout) = layout.num_cols_;
@@ -24,8 +22,7 @@ void InitializeRawBlock(RawBlock *raw,
     block->AttrSizes(layout)[i] = layout.attr_sizes_[i];
   }
 }
-  
+
 } // namespace storage
 
-  
 } // namespace noisepage
