@@ -71,8 +71,10 @@ public:
     }
   }
 
-  static void ApplyDelta(const BlockLayout &layout, const ProjectedRow &delta, 
-                         ProjectedRow *buffer, const std::unordered_map<uint16_t, uint16_t> &id_to_offset) {
+  static void
+  ApplyDelta(const BlockLayout &layout, const ProjectedRow &delta,
+             ProjectedRow *buffer,
+             const std::unordered_map<uint16_t, uint16_t> &id_to_offset) {
     for (uint16_t i = 0; i < delta.NumColumns(); i++) {
       const byte *delta_attr = delta.AccessWithNullCheck(i);
       uint16_t col_id = delta.ColumnIds()[i];

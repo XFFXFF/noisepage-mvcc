@@ -13,7 +13,8 @@ public:
     }
   }
 
-  void Select(timestamp_t timestamp, const TupleSlot &slot, ProjectedRow *out_buffer);
+  void Select(timestamp_t timestamp, const TupleSlot &slot,
+              ProjectedRow *out_buffer);
 
   bool Update(const TupleSlot &slot, const ProjectedRow &redo,
               DeltaRecord *undo);
@@ -28,10 +29,10 @@ private:
 
   DeltaRecord *ReadVersionPtr(const TupleSlot &slot);
 
-  bool HasConflict(DeltaRecord *version_ptr, DeltaRecord *undo) {      
-    return version_ptr != nullptr
-           && version_ptr->timestamp_ != undo->timestamp_
-           && static_cast<int64_t>(version_ptr->timestamp_) < 0;
+  bool HasConflict(DeltaRecord *version_ptr, DeltaRecord *undo) {
+    return version_ptr != nullptr &&
+           version_ptr->timestamp_ != undo->timestamp_ &&
+           static_cast<int64_t>(version_ptr->timestamp_) < 0;
   }
 
   void NewBlock() {
