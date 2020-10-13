@@ -100,9 +100,9 @@ struct DataTableConcurrentTests : public ::testing::Test {
 };
 
 TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
-  const uint32_t repeat = 1;
+  const uint32_t repeat = 10;
   const uint32_t max_col = 100;
-  const uint32_t num_threads = 1;
+  const uint32_t num_threads = 8;
   const uint32_t num_inserts = 10000;
 
   storage::BlockLayout layout = testutil::RandomLayout(generator_, max_col);
@@ -110,6 +110,7 @@ TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
   
   for (uint32_t i = 0; i < repeat; i++) {
     std::vector<FakeTransaction> fake_txns;
+    fake_txns.reserve(num_threads);
     for (uint32_t j = 0; j < num_threads; j++) {
       fake_txns.emplace_back(layout, table, null_ratio_(generator_), 
                              timestamp_t(0), timestamp_t(0), generator_);
