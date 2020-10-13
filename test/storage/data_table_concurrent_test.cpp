@@ -99,40 +99,40 @@ struct DataTableConcurrentTests : public ::testing::Test {
   std::uniform_real_distribution<double> null_ratio_{0.0, 1.0};
 };
 
-// TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
-//   const uint32_t repeat = 10;
-//   const uint32_t max_col = 100;
-//   const uint32_t num_threads = 8;
-//   const uint32_t num_inserts = 10000;
+TEST_F(DataTableConcurrentTests, ConcurrentInsert) {
+  const uint32_t repeat = 10;
+  const uint32_t max_col = 100;
+  const uint32_t num_threads = 8;
+  const uint32_t num_inserts = 10000;
 
-//   storage::BlockLayout layout = testutil::RandomLayout(generator_, max_col);
-//   storage::DataTable table(block_store_, layout);
+  for (uint32_t i = 0; i < repeat; i++) {
+    storage::BlockLayout layout = testutil::RandomLayout(generator_, max_col);
+    storage::DataTable table(block_store_, layout);
   
-//   for (uint32_t i = 0; i < repeat; i++) {
-//     std::vector<FakeTransaction> fake_txns;
-//     fake_txns.reserve(num_threads);
-//     for (uint32_t j = 0; j < num_threads; j++) {
-//       fake_txns.emplace_back(layout, table, null_ratio_(generator_), 
-//                              timestamp_t(0), timestamp_t(0), generator_);
-//     }
+    std::vector<FakeTransaction> fake_txns;
+    fake_txns.reserve(num_threads);
+    for (uint32_t j = 0; j < num_threads; j++) {
+      fake_txns.emplace_back(layout, table, null_ratio_(generator_), 
+                             timestamp_t(0), timestamp_t(0), generator_);
+    }
 
-//     auto workload = [&](uint32_t id) {
-//       std::default_random_engine thread_generator(id);
-//       for (uint32_t j = 0; j < num_inserts / num_threads; j++) {
-//         auto slot = fake_txns[id].InsertRandomTuple(thread_generator);
-//       }
-//     };
-//     testutil::RunThreadUntilFinish(num_threads, workload);
+    auto workload = [&](uint32_t id) {
+      std::default_random_engine thread_generator(id);
+      for (uint32_t j = 0; j < num_inserts / num_threads; j++) {
+        auto slot = fake_txns[id].InsertRandomTuple(thread_generator);
+      }
+    };
+    testutil::RunThreadUntilFinish(num_threads, workload);
     
-//     for (auto &fake_txn : fake_txns) {
-//       for (auto slot : fake_txn.InsertedSlots()) {
-//         auto *selected_row = fake_txn.SelectIntoBuffer(slot, timestamp_t(1));
-//         EXPECT_TRUE(testutil::ProjectionListEqual(fake_txn.Layout(), *selected_row, 
-//                                                   *fake_txn.GetInsertedRow(slot)));
-//       }
-//     }
-//   }
-// }
+    for (auto &fake_txn : fake_txns) {
+      for (auto slot : fake_txn.InsertedSlots()) {
+        auto *selected_row = fake_txn.SelectIntoBuffer(slot, timestamp_t(1));
+        EXPECT_TRUE(testutil::ProjectionListEqual(fake_txn.Layout(), *selected_row, 
+                                                  *fake_txn.GetInsertedRow(slot)));
+      }
+    }
+  }
+}
 
 TEST_F(DataTableConcurrentTests, ConcurrentUpdateOneWriterWins) {
   const uint32_t repeat = 10;
