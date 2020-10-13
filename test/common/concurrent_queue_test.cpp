@@ -2,8 +2,7 @@
 #include "gtest/gtest.h"
 #include <iostream>
 
-namespace noisepage
-{
+namespace noisepage {
 class ConcurrentQueueTests : public ::testing::Test {};
 
 TEST_F(ConcurrentQueueTests, SimpleTest) {

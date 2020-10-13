@@ -1,19 +1,19 @@
 #include "common/concurrent_bitmap.h"
-#include "gtest/gtest.h"
 #include "common/test_util.h"
+#include "gtest/gtest.h"
 #include <bitset>
 #include <random>
 
-namespace noisepage
-{
-template<uint32_t N>
-void CheckReferenceBitmap(const ConcurrentBitmap<N> &bitmap, const std::bitset<N> &stl_bitmap) {
+namespace noisepage {
+template <uint32_t N>
+void CheckReferenceBitmap(const ConcurrentBitmap<N> &bitmap,
+                          const std::bitset<N> &stl_bitmap) {
   for (uint32_t i = 0; i < N; i++) {
     EXPECT_EQ(bitmap[i], stl_bitmap[i]);
   }
 }
 
-class ConcurrentBitmapTests : public ::testing::Test {}; 
+class ConcurrentBitmapTests : public ::testing::Test {};
 
 TEST_F(ConcurrentBitmapTests, SimpleTest) {
   const uint32_t num_elements = 100;
@@ -21,7 +21,7 @@ TEST_F(ConcurrentBitmapTests, SimpleTest) {
 
   for (uint32_t i = 0; i < num_elements; i++) {
     EXPECT_FALSE(tested.Test(i));
-  } 
+  }
 
   std::bitset<num_elements> stl_bitmap;
   CheckReferenceBitmap<num_elements>(tested, stl_bitmap);
@@ -59,8 +59,7 @@ TEST_F(ConcurrentBitmapTests, ConcurrentCorrectnessTest) {
 
   std::vector<uint32_t> all_elements;
   for (auto i = 0; i < num_threads; i++) {
-    all_elements.insert(all_elements.end(), 
-                        elements[i].begin(),
+    all_elements.insert(all_elements.end(), elements[i].begin(),
                         elements[i].end());
   }
 
@@ -71,4 +70,4 @@ TEST_F(ConcurrentBitmapTests, ConcurrentCorrectnessTest) {
   }
 }
 
-}
+} // namespace noisepage

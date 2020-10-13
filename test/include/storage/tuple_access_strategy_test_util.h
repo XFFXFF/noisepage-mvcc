@@ -1,17 +1,18 @@
 #pragma once
 
+#include "storage/storage_util.h"
+#include "storage/tuple_access_strategy.h"
+#include "gtest/gtest.h"
 #include <cassert>
 #include <random>
 #include <unordered_map>
-#include "storage/tuple_access_strategy.h"
-#include "gtest/gtest.h"
-#include "storage/storage_util.h"
 
 namespace noisepage {
 namespace testutil {
 
-template<typename Random>
-void RandomTupleContent(const storage::BlockLayout &layout, byte *contents, Random &generator) {
+template <typename Random>
+void RandomTupleContent(const storage::BlockLayout &layout, byte *contents,
+                        Random &generator) {
   std::uniform_int_distribution<uint8_t> dist(0, UINT8_MAX);
   for (uint16_t i = 0; i < layout.num_cols_; i++) {
     contents[i] = static_cast<byte>(dist(generator));
@@ -19,8 +20,8 @@ void RandomTupleContent(const storage::BlockLayout &layout, byte *contents, Rand
 }
 
 struct FakeRawTuple {
-  template<typename Random>
-  FakeRawTuple(const storage::BlockLayout layout, Random &generator) 
+  template <typename Random>
+  FakeRawTuple(const storage::BlockLayout layout, Random &generator)
       : layout_(layout), contents_(new byte[layout.tuple_size_]) {
     RandomTupleContent(layout, contents_, generator);
     uint32_t pos = 0;
@@ -29,10 +30,8 @@ struct FakeRawTuple {
       pos += attr_size;
     }
   }
-  
-  ~FakeRawTuple() {
-    delete[] contents_;
-  }
+
+  ~FakeRawTuple() { delete[] contents_; }
 
   uint64_t Attribute(uint16_t col_id) const {
     byte *pos = contents_ + attr_offsets_[col_id];
@@ -44,10 +43,8 @@ struct FakeRawTuple {
   byte *contents_;
 };
 
-void InsertTuple(const FakeRawTuple &tuple,
-                 const storage::BlockLayout &layout,
-                 storage::TupleAccessStrategy &tested,
-                 storage::RawBlock *block,
+void InsertTuple(const FakeRawTuple &tuple, const storage::BlockLayout &layout,
+                 storage::TupleAccessStrategy &tested, storage::RawBlock *block,
                  uint32_t offset) {
   storage::TupleSlot slot(block, offset);
   for (uint16_t i = 0; i < layout.num_cols_; i++) {
@@ -57,7 +54,7 @@ void InsertTuple(const FakeRawTuple &tuple,
   }
 }
 
-template<typename Random>
+template <typename Random>
 void TryInsertFakeTuple(const storage::BlockLayout &layout,
                         storage::TupleAccessStrategy &tested,
                         storage::RawBlock *block,
@@ -68,17 +65,14 @@ void TryInsertFakeTuple(const storage::BlockLayout &layout,
   uint32_t offset = slot.GetOffset();
   EXPECT_TRUE(tested.ColumnNullBitmap(block, 0)->Test(offset));
 
-  auto result = tuples.emplace(
-    std::piecewise_construct,
-    std::forward_as_tuple(offset),
-    std::forward_as_tuple(layout, generator)
-  );
+  auto result =
+      tuples.emplace(std::piecewise_construct, std::forward_as_tuple(offset),
+                     std::forward_as_tuple(layout, generator));
 
   EXPECT_TRUE(result.second);
   InsertTuple(result.first->second, layout, tested, block, offset);
 }
-  
+
 } // namespace testutil
 
-  
 } // namespace noisepage

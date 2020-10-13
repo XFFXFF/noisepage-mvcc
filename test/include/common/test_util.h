@@ -1,17 +1,16 @@
 #pragma once
 
-#include <random>
 #include <functional>
+#include <random>
 #include <thread>
 
-namespace noisepage
-{
-namespace testutil
-{
-template<typename T, typename Random>
-typename std::vector<T>::iterator UniformRandomElement(std::vector<T> &elems, 
-                                              Random &generator) {
-  return elems.begin() + std::uniform_int_distribution<>(0, (int)elems.size() - 1)(generator);
+namespace noisepage {
+namespace testutil {
+template <typename T, typename Random>
+typename std::vector<T>::iterator UniformRandomElement(std::vector<T> &elems,
+                                                       Random &generator) {
+  return elems.begin() +
+         std::uniform_int_distribution<>(0, (int)elems.size() - 1)(generator);
 }
 
 void RunThreadUntilFinish(uint32_t num_threads,

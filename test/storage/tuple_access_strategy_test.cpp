@@ -1,21 +1,17 @@
-#include <unordered_map>
-#include "gtest/gtest.h"
+#include "storage/storage_test_util.h"
 #include "storage/tuple_access_strategy.h"
 #include "storage/tuple_access_strategy_test_util.h"
-#include "storage/storage_test_util.h"
+#include "gtest/gtest.h"
+#include <unordered_map>
 
-namespace noisepage
-{
+namespace noisepage {
 struct TupleAccessStrategyTests : public ::testing::Test {
   storage::RawBlock *raw_block_ = nullptr;
-  protected:
-    void SetUp() override {
-      raw_block_ = new storage::RawBlock();
-    }
 
-    void TearDown() override {
-      delete raw_block_;
-    }
+protected:
+  void SetUp() override { raw_block_ = new storage::RawBlock(); }
+
+  void TearDown() override { delete raw_block_; }
 };
 
 TEST_F(TupleAccessStrategyTests, NullTest) {
@@ -53,7 +49,6 @@ TEST_F(TupleAccessStrategyTests, NullTest) {
         EXPECT_TRUE(tested.AccessWithNullCheck(slot, j) != nullptr);
       }
     }
-
   }
 }
 
@@ -69,10 +64,11 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
 
     std::unordered_map<uint32_t, testutil::FakeRawTuple> tuples;
 
-    const uint32_t num_insert = 100; 
-    
+    const uint32_t num_insert = 100;
+
     for (uint32_t j = 0; j < num_insert; j++) {
-      testutil::TryInsertFakeTuple(layout, tested, raw_block_, tuples, generator);
+      testutil::TryInsertFakeTuple(layout, tested, raw_block_, tuples,
+                                   generator);
     }
 
     for (const auto &tuple : tuples) {
@@ -81,7 +77,8 @@ TEST_F(TupleAccessStrategyTests, SimpleInsertTest) {
         auto val1 = tuple.second.Attribute(col_id);
         storage::TupleSlot slot(raw_block_, offset);
         byte *pos = tested.AccessWithNullCheck(slot, col_id);
-        auto val2 = storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], pos);
+        auto val2 =
+            storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], pos);
         EXPECT_EQ(val1, val2);
       }
     }
@@ -100,13 +97,16 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
     memset(raw_block_, 0, sizeof(storage::RawBlock));
     storage::InitializeRawBlock(raw_block_, layout, 0);
 
-    std::vector<std::unordered_map<uint32_t, testutil::FakeRawTuple>> tuples(num_thread);
+    std::vector<std::unordered_map<uint32_t, testutil::FakeRawTuple>> tuples(
+        num_thread);
 
     auto workload = [&](uint32_t thread_id) {
       std::default_random_engine thread_generator(thread_id);
-      uint32_t num_insert = layout.num_slots_ / num_thread ? layout.num_slots_ < 100000 : 1000;
+      uint32_t num_insert =
+          layout.num_slots_ / num_thread ? layout.num_slots_ < 100000 : 1000;
       for (uint32_t j = 0; j < num_insert; j++) {
-        testutil::TryInsertFakeTuple(layout, tested, raw_block_, tuples[thread_id], thread_generator);
+        testutil::TryInsertFakeTuple(layout, tested, raw_block_,
+                                     tuples[thread_id], thread_generator);
       }
     };
 
@@ -117,13 +117,13 @@ TEST_F(TupleAccessStrategyTests, ConcureentInsertTest) {
           auto val1 = tuple.second.Attribute(col_id);
           storage::TupleSlot slot(raw_block_, tuple.first);
           auto *pos = tested.AccessWithNullCheck(slot, col_id);
-          auto val2 = storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], pos);
+          auto val2 =
+              storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], pos);
           EXPECT_EQ(val1, val2);
         }
       }
     }
-
   }
 }
-  
+
 } // namespace noisepage

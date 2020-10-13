@@ -4,8 +4,7 @@
 #include <random>
 #include <thread>
 
-namespace noisepage
-{
+namespace noisepage {
 class ObjectPoolTests : public ::testing::Test {};
 
 TEST_F(ObjectPoolTests, SimpleTest) {
@@ -23,19 +22,20 @@ TEST_F(ObjectPoolTests, SimpleTest) {
 }
 
 class ObjectPoolTestType {
-  public:
-    ObjectPoolTestType *Use() {
-      bool expected = false;
-      EXPECT_TRUE(in_use_.compare_exchange_strong(expected, true));
-      return this;
-    }
+public:
+  ObjectPoolTestType *Use() {
+    bool expected = false;
+    EXPECT_TRUE(in_use_.compare_exchange_strong(expected, true));
+    return this;
+  }
 
-    ObjectPoolTestType *Release() {
-      in_use_.store(false);
-      return this;
-    }
-  private:
-    std::atomic<bool> in_use_;
+  ObjectPoolTestType *Release() {
+    in_use_.store(false);
+    return this;
+  }
+
+private:
+  std::atomic<bool> in_use_;
 };
 
 // 当多个线程对同一个object_pool调用Get方法时，不希望object_pool把
@@ -56,7 +56,7 @@ TEST_F(ObjectPoolTests, ConcurrentCorrectnessTest) {
       if (op_dist(generator)) {
         ptrs.push_back(tested.Get()->Use());
       } else if (!ptrs.empty()) {
-        std::uniform_int_distribution<> pos_dist(0, (int) ptrs.size()-1);
+        std::uniform_int_distribution<> pos_dist(0, (int)ptrs.size() - 1);
         int pos = pos_dist(generator);
         tested.Release(ptrs[pos]->Release());
         ptrs.erase(ptrs.begin() + pos);
@@ -81,5 +81,3 @@ TEST_F(ObjectPoolTests, ConcurrentCorrectnessTest) {
   }
 }
 } // namespace noisepage
-
-

@@ -1,8 +1,7 @@
 #include "common/concurrent_map.h"
 #include "gtest/gtest.h"
 
-namespace noisepage
-{
+namespace noisepage {
 class ConcurrentMapTests : public ::testing::Test {};
 
 TEST_F(ConcurrentMapTests, SimpleTest) {
@@ -24,5 +23,5 @@ TEST_F(ConcurrentMapTests, SimpleTest) {
     EXPECT_EQ(val, i);
   }
 }
-  
+
 } // namespace noisepage

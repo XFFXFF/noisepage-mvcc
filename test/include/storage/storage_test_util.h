@@ -1,18 +1,17 @@
 #pragma once
-#include <vector>
-#include "storage/storage_defs.h"
 #include "common/test_util.h"
-#include "storage/tuple_access_strategy_test_util.h"
+#include "storage/storage_defs.h"
 #include "storage/storage_util.h"
+#include "storage/tuple_access_strategy_test_util.h"
+#include <vector>
 
-namespace noisepage
-{
-namespace testutil
-{
-template<typename Random>
-storage::BlockLayout RandomLayout(Random &generator, uint16_t max_col=UINT16_MAX) {
+namespace noisepage {
+namespace testutil {
+template <typename Random>
+storage::BlockLayout RandomLayout(Random &generator,
+                                  uint16_t max_col = UINT16_MAX) {
   uint16_t num_attrs = std::uniform_int_distribution<>(2, max_col)(generator);
-  std::vector<uint8_t> possible_attr_sizes = {1, 2, 4, 8}; 
+  std::vector<uint8_t> possible_attr_sizes = {1, 2, 4, 8};
   std::vector<uint8_t> attr_sizes(num_attrs);
   attr_sizes[0] = 8; // 第一个attr总是version_ptr
   for (auto i = 1; i < num_attrs; i++) {
@@ -20,9 +19,9 @@ storage::BlockLayout RandomLayout(Random &generator, uint16_t max_col=UINT16_MAX
     attr_sizes[i] = *it;
   }
   return {num_attrs, attr_sizes};
-}  
+}
 
-template<typename Random>
+template <typename Random>
 void FillWithRandomBytes(uint32_t num_bytes, byte *out, Random &generator) {
   std::uniform_int_distribution dist(0, UINT8_MAX);
   for (uint32_t i = 0; i < num_bytes; i++) {
@@ -30,8 +29,9 @@ void FillWithRandomBytes(uint32_t num_bytes, byte *out, Random &generator) {
   }
 }
 
-template<typename Random>
-void PopulateRandomRow(storage::ProjectedRow *row, const storage::BlockLayout layout, 
+template <typename Random>
+void PopulateRandomRow(storage::ProjectedRow *row,
+                       const storage::BlockLayout layout,
                        const double null_bias, Random &generator) {
   for (uint16_t i = 0; i < row->NumColumns(); i++) {
     uint16_t col_id = row->ColumnIds()[i];
@@ -50,15 +50,16 @@ void PrintRow(storage::ProjectedRow *row, const storage::BlockLayout &layout) {
     uint16_t col_id = row->ColumnIds()[i];
     byte *out = row->AccessWithNullCheck(i);
     if (out) {
-      printf("col_id: %u is %lx \n", col_id, 
-            storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], out));
+      printf("col_id: %u is %lx \n", col_id,
+             storage::StorageUtil::ReadBytes(layout.attr_sizes_[col_id], out));
     } else {
       printf("col_id: %u is NULL\n", col_id);
     }
   }
 }
 
-std::vector<uint16_t> ProjectionListAllColumns(const storage::BlockLayout &layout) {
+std::vector<uint16_t>
+ProjectionListAllColumns(const storage::BlockLayout &layout) {
   std::vector<uint16_t> col_ids(layout.num_cols_ - 1);
   for (uint16_t i = 1; i < layout.num_cols_; i++) {
     col_ids[i - 1] = i;
@@ -66,11 +67,13 @@ std::vector<uint16_t> ProjectionListAllColumns(const storage::BlockLayout &layou
   return col_ids;
 }
 
-template<typename Random>
-std::vector<uint16_t> ProjectionListRandomColumns(const storage::BlockLayout &layout, Random &generator) {
-  uint16_t num_cols = 
-      std::uniform_int_distribution<uint16_t>(1, static_cast<uint16_t>(layout.num_cols_ - 1))(generator);
-  std::vector<uint16_t> col_ids; 
+template <typename Random>
+std::vector<uint16_t>
+ProjectionListRandomColumns(const storage::BlockLayout &layout,
+                            Random &generator) {
+  uint16_t num_cols = std::uniform_int_distribution<uint16_t>(
+      1, static_cast<uint16_t>(layout.num_cols_ - 1))(generator);
+  std::vector<uint16_t> col_ids;
   for (uint16_t col_id = 1; col_id < layout.num_cols_; col_id++) {
     col_ids.push_back(col_id);
   }
@@ -84,9 +87,11 @@ std::vector<uint16_t> ProjectionListRandomColumns(const storage::BlockLayout &la
 bool ProjectionListEqual(const storage::BlockLayout &layout,
                          const storage::ProjectedRow &one,
                          const storage::ProjectedRow &other) {
-  if (one.NumColumns() != other.NumColumns()) return false;
+  if (one.NumColumns() != other.NumColumns())
+    return false;
   for (uint16_t i = 0; i < one.NumColumns(); i++) {
-    if (one.ColumnIds()[i] != other.ColumnIds()[i]) return false;
+    if (one.ColumnIds()[i] != other.ColumnIds()[i])
+      return false;
   }
 
   for (uint16_t i = 0; i < one.NumColumns(); i++) {
@@ -103,15 +108,15 @@ bool ProjectionListEqual(const storage::BlockLayout &layout,
       }
     }
 
-    uint64_t one_val = storage::StorageUtil::ReadBytes(attr_size, one_pos);    
+    uint64_t one_val = storage::StorageUtil::ReadBytes(attr_size, one_pos);
     uint64_t other_val = storage::StorageUtil::ReadBytes(attr_size, other_pos);
     EXPECT_EQ(one_val, other_val);
-    if (one_val != other_val) return false;
+    if (one_val != other_val)
+      return false;
   }
   return true;
 }
 
 } // namespace testutil
 
-  
 } // namespace noisepage
