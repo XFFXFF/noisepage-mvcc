@@ -1,5 +1,5 @@
-# noisepage-mvcc
+# noisepage-storage
 
-cmu最新的数据库项目[noisepage](https://github.com/cmu-db/noisepage)(终于改名字了，前两天看还叫terrier来着)  
+cmu最新的数据库项目[noisepage](https://github.com/cmu-db/noisepage)
 
-[cmu 15721](https://15721.courses.cs.cmu.edu/spring2020/schedule.html)的projects部分要用到noisepage，想先看看mvcc的实现，顺便练练c++。
+学习noisepage的storage部分，从noisepage的第一个commit开始读，并模仿着写，也顺便练习C++
